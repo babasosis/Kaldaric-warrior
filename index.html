@@ -177,6 +177,17 @@ var militaryAccess={"Aerion":false,"Valdor":false,"Eldoria":false,"Thalgrim":fal
 var wars={};
 function isKaldaryaRegion(r){return ["Kaldarya Batı","Kaldarya Merkez","Kaldarya Doğu"].indexOf(r)>=0}
 function atWar(a,b){return !!wars[a+"|"+b]||!!wars[b+"|"+a]}
+
+function declareWarUnified(region){
+ setWar(K.playerRegion,region,true);
+ diplomacy[region]=Math.min(-80,(diplomacy[region]||0)-35);
+ K.news.unshift("Yıl "+K.year+" Ay "+K.month+": Kaldarya Merkez, "+region+" Krallığına savaş ilan etti.");
+ say("⚔ "+region+" Krallığına savaş ilan edildi. Sınırdaki savaş/fetih koridorları artık kullanılabilir.");
+}
+function makePeaceUnified(region){
+ setWar(K.playerRegion,region,false);
+ say("🕊 "+region+" ile savaş hâli sona erdi. Askerî geçiş izni yoksa sınır geçişi tekrar kapandı.");
+}
 function setMilitaryAccess(region,on){if(region===K.playerRegion||isKaldaryaRegion(region))return;militaryAccess[region]=!!on;say("🛡 Askerî Geçiş • "+region+": "+(on?"İzin verildi":"İzin yok"))}
 function setWar(a,b,on){wars[a+"|"+b]=!!on;wars[b+"|"+a]=!!on;say("⚔ "+a+" / "+b+": "+(on?"Savaş hâli":"Barış"))}
 function hasMilitaryAccess(from,to){
@@ -195,7 +206,7 @@ var normalBorderLinks={
  "Yaprak Ormanı|Onyar":1,"Onyar|Yaprak Ormanı":1
 };
 var specialCorridors={
- "Solar|Kızılkum":1,"Kızılkum|Solar":1,
+ "Solar|Altın Vaha":1,"Altın Vaha|Solar":1,
  "Börü Geçit|Taşova":1,"Taşova|Börü Geçit":1,
  "Börü Geçit|Kervanyolu":1,"Kervanyolu|Börü Geçit":1,
  "Konukgeçit|Yaşhısar":1,"Yaşhısar|Konukgeçit":1,
@@ -216,8 +227,8 @@ function movementCost(a,b,armyOwner){
  if(!special&&d>105)return 99;
  if(a.region!==b.region&&!politicalLink(a,b))return 99;
  /* Zafran dış kara girişi yalnız Solar koridorundan */
- if(b.region==="Zafran"&&a.region!=="Zafran"&&pair!=="Solar|Kızılkum")return 99;
- if(a.region==="Zafran"&&b.region!=="Zafran"&&pair!=="Kızılkum|Solar")return 99;
+ if(b.region==="Zafran"&&a.region!=="Zafran"&&pair!=="Solar|Altın Vaha")return 99;
+ if(a.region==="Zafran"&&b.region!=="Zafran"&&pair!=="Altın Vaha|Solar")return 99;
  if(special)return 1; /* sınırdaki coğrafi engel bu koridorda göz ardı edilir */
  var hard=(a.terrain+" "+b.terrain),c=1;
  if(hard.indexOf("dağ")>=0||hard.indexOf("volkanik")>=0||hard.indexOf("orman")>=0||hard.indexOf("nehir")>=0||hard.indexOf("çöl")>=0)c=2;
@@ -261,7 +272,7 @@ function setScale(k,v){K[k]=v;openCapital('tax')}
 function special(name,c){if(K.gold<c){say('💰 Yeterli altın yok.');return}K.gold-=c;K.peopleHappy=Math.min(100,K.peopleHappy+2);sync();openCapital('tax');say('🎉 '+name+' uygulandı.')}
 function harvest(){if(K.turn<4){say('🌾 Hasat Bayramı 4 turda bir düzenlenebilir.');return}var c=Math.max(15,Math.ceil(DATA.length/8));special('Hasat Bayramı',c)}
 function openDiplomacy(){var h='<div class="row"><h2 style="flex:1">🤝 Diplomasi</h2><button onclick="closePanel()">✕</button></div><div class="small">Total War: Attila omurgası • ilişkiler ve teklifler</div>';Object.keys(diplomacy).forEach(function(k){h+='<div class="card"><b>'+k+'</b> • İlişki '+diplomacy[k]+'<div class="row"><button onclick="dipAct(\''+k+'\',\'Ticaret Anlaşması\')">Ticaret Anlaşması</button><button onclick="dipAct(\''+k+'\',\'Saldırmazlık Paktı\')">Saldırmazlık</button><button onclick="dipAct(\''+k+'\',\'Askerî Geçiş\')">Askerî Geçiş</button><button class="danger" onclick="dipAct(\''+k+'\',\'Savaş İlanı\')">Savaş İlan Et</button></div></div>'});panel(h)}
-function dipAct(k,a){var chance=Math.max(10,Math.min(90,50+diplomacy[k]));if(a==='Savaş İlanı'){K.news.unshift(k+' ile savaş başladı.');say('⚔ '+k+' krallığına savaş ilan edildi.');closePanel();return}var ok=Math.random()*100<chance;say((ok?'🤝 Kabul edildi: ':'❌ Reddedildi: ')+k+' • '+a+' • değerlendirme '+chance+'%')}
+function dipAct(k,a){var chance=Math.max(10,Math.min(90,50+diplomacy[k]));if(a==='Savaş İlanı'){declareWarUnified(k);closePanel();return}if(a==='Askerî Geçiş'){var ok=Math.random()*100<chance;if(ok)setMilitaryAccess(k,true);say((ok?'🤝 Askerî geçiş izni alındı: ':'❌ Askerî geçiş reddedildi: ')+k);return}if(a==='Barış Antlaşması'){var ok=Math.random()*100<chance;if(ok)makePeaceUnified(k);else say('❌ '+k+' barış teklifini reddetti.');return}var ok=Math.random()*100<chance;say((ok?'🤝 Kabul edildi: ':'❌ Reddedildi: ')+k+' • '+a+' • değerlendirme '+chance+'%')}
 function processBuilds(){Object.keys(settlements).forEach(function(n){var s=settlements[n];if(s.construction){s.construction.left--;if(s.construction.left<=0){s.buildings.push(s.construction.name);s.dev=Math.min(100,s.dev+3);K.news.unshift(n+' yerleşiminde '+s.construction.name+' tamamlandı.');s.construction=null}}})}
 function dynamicEvent(){if(Math.random()>.32)return;var pool=[];if(K.gold<15)pool.push('Hazine boşalıyor; tüccarlar saraya borç teklif ediyor.');if(K.peopleHappy<45)pool.push('Köylü heyeti saray kapısında vergi indirimi istiyor.');if(K.armyLoyal<45)pool.push('Orduda maaş ve sadakat tartışmaları büyüyor.');if(diplomacy['Drakmir']<0)pool.push('Drakmir sınırında diplomatik bir gerilim yaşandı.');if(!pool.length)pool.push('Gezgin tüccarlar başkente ulaştı; saray yeni fırsatları değerlendiriyor.');say('📜 <b>Dinamik Olay</b><br>'+pool[Math.floor(Math.random()*pool.length)])}
 var kingdomKings={};
