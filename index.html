@@ -15,7 +15,7 @@ button,.stat{border:1px solid #64748b;border-radius:9px;background:#25334a;color
 #msg{position:fixed;z-index:150;right:12px;top:70px;max-width:330px;background:#101827eF;border:1px solid #64748b;border-radius:11px;padding:10px 12px;display:none;line-height:1.4}
 #badge{position:fixed;right:10px;bottom:10px;z-index:120;background:#000b;border:1px solid #fff8;border-radius:8px;padding:5px 8px;font-weight:800}
 
-.settle{position:absolute;z-index:24;width:88px;height:38px;padding:0;min-height:0;border:1px solid transparent;border-radius:12px;transform:translate(-50%,-50%);background:transparent}
+.settle{position:absolute;z-index:12;z-index:24;width:88px;height:38px;padding:0;min-height:0;border:1px solid transparent;border-radius:12px;transform:translate(-50%,-50%);background:transparent}
 .settle.glow{border:3px solid white;background:rgba(255,255,255,.20);box-shadow:0 0 0 8px rgba(255,255,255,.35),0 0 22px white;animation:settleGlow .65s infinite alternate}
 @keyframes settleGlow{to{box-shadow:0 0 0 13px rgba(255,255,255,.18),0 0 30px white}}
 .settle.newCityMarker{width:22px;height:22px;border:3px solid #f6e1a5;border-radius:50%;background:#8b5a2b;box-shadow:0 0 0 4px #0008,0 0 14px #f6e1a5}.settle.newCityMarker:after{content:"Kumkapı";position:absolute;left:50%;top:20px;transform:translateX(-50%);white-space:nowrap;color:#fff4cf;background:#24160dcc;border:1px solid #d5b46a;border-radius:5px;padding:2px 5px;font:700 12px Georgia,serif;text-shadow:0 1px 2px #000}.settle.blocked{border:2px dashed #fff8;background:#0005;opacity:.55}.settle.reachable{border:3px solid white;background:rgba(255,255,255,.18);box-shadow:0 0 0 7px rgba(255,255,255,.28)}
@@ -29,7 +29,7 @@ button,.stat{border:1px solid #64748b;border-radius:9px;background:#25334a;color
 .familyShell{position:relative}.generalCorner{position:absolute;left:8px;top:64px;width:190px;z-index:3}.charPortrait{width:72px;height:88px;border:2px solid #9b7a3e;border-radius:7px;background:linear-gradient(#40362e,#171513);display:flex;align-items:center;justify-content:center;margin:4px auto;font-size:34px;box-shadow:inset 0 0 18px #000}.generalCard{padding:7px;margin:7px 0;border:1px solid #6f5936;border-radius:7px;background:#1c1916}.treeWithGenerals{padding-left:205px}
 @media(max-width:760px){.generalCorner{position:relative;left:auto;top:auto;width:auto;display:flex;gap:8px;overflow:auto}.treeWithGenerals{padding-left:0}.generalCard{min-width:150px}}
 
-.territoryTint{position:absolute;width:72px;height:72px;border-radius:18px;transform:translate(-50%,-50%);pointer-events:none;z-index:2;opacity:.30;box-shadow:0 0 0 2px rgba(255,255,255,.16) inset}
+.territoryTint{position:absolute;width:72px;height:72px;border-radius:18px;transform:translate(-50%,-50%);pointer-events:none;z-index:2;opacity:.72;mix-blend-mode:multiply;box-shadow:0 0 0 2px rgba(255,255,255,.22) inset;filter:saturate(1.15) contrast(1.04)}
 </style></head><body>
 <div id="bar"><span class="stat">Tur <b id="turn">1</b></span><span class="stat">Altın <b id="gold">1250</b></span><span class="stat">Erzak <b id="food">430</b></span>
 <button id="choose" onclick="chooseMode();return false;">🏰 Şehir Seç</button><button id="manage" onclick="openCapital();return false;">👑 Yönetim</button><button id="dip" onclick="openDiplomacy();return false;">🤝 Diplomasi</button><button onclick="openWarHistory();return false;">📜 Savaşlar</button><span class="stat">Konum: <b id="where">Sancaktepe</b></span>
