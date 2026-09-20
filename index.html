@@ -143,7 +143,7 @@ var K={at:"Sancaktepe",movePoints:2,maxMove:2,kingArmy:{name:"Kaldarya Kral Ordu
 for(var i=0;i<DATA.length;i++)K.info[DATA[i].name]=DATA[i];
 var terrainCost={"ova":1,"orman":2,"ada/orman":2,"çöl":2,"dağ":3,"orman/nehir":2,"dağ/nehir":3,"volkanik":3,"mistik/dağ":3};
 var capitals={"Aerion":"Thalor","Valdor":"Kuzey Kırları","Eldoria":"Yeşiltepe","Thalgrim":"Karhisar","Vardun":"Bozkurtüstü","Drakmir":"Ejder Zirvesi","Kaldarya Batı":"Yinla","Kaldarya Merkez":"Sancaktepe","Kaldarya Doğu":"Konukgeçit","Zafran":"Serap Kenti","Lunaris":"Gümüşkale"};
-var settlements={}; DATA.forEach(function(c,idx){settlements[c.name]={dev:18+(idx*7)%48,status:"Huzurlu",governor:"Atanmamış",buildings:[],construction:null};});
+var settlements={}; DATA.forEach(function(c,idx){settlements[c.name]={dev:18+(idx*7)%48,status:"Huzurlu",governor:"Atanmamış",buildings:[],construction:null,owner:c.region,originalOwner:c.region,occupied:false,siege:null};});
 var dynasty=[{name:"Kral Arven",age:38,role:"Kral",traits:["Kararlı","İyi Yönetici"],alive:true},{name:"Kraliçe Lysa",age:34,role:"Eş",traits:["Diplomat"],alive:true},{name:"Prens Edric",age:14,role:"Resmî Varis",traits:["Cesur"],alive:true},{name:"Prenses Mira",age:9,role:"Çocuk",traits:["Meraklı"],alive:true},{name:"Kral Odran",age:67,role:"Eski Kral",traits:["Savaşçı"],alive:false,bio:"Kaldarya'yı 18 yıl yönetti. Üç sınır savaşına katıldı ve 67 yaşında doğal nedenlerle öldü."}];
 var generals=[{name:"General Boran",army:"Taç Muhafızları",soldiers:15,onDuty:true,age:42,serviceTurns:18,battles:5,supply:82,morale:78,traits:["İkmalci","Disiplinli"]},{name:"General Taren",army:"Gümüş Mızraklar",soldiers:15,onDuty:true,age:31,serviceTurns:9,battles:2,supply:74,morale:72,traits:["Cesur"]},{name:"Eldric",army:"",soldiers:0,onDuty:false,age:27,serviceTurns:0,battles:0,supply:60}];
 
@@ -164,7 +164,7 @@ function createGeneralPawns(){
 function openGeneralArmy(i){var g=generals[i];K.activeGeneral=i;panel('<div class="row"><h2 style="flex:1">⚔ '+g.name+' • '+g.army+'</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>Konum:</b> '+g.at+'<br><b>Asker:</b> '+g.soldiers+'<br><b>İkmal:</b> %'+g.supply+'<br><b>Moral:</b> %'+g.morale+'<br><b>General deneyimi:</b> '+generalExp(g)+'<br><b>Eylem puanı:</b> '+g.movePoints+'/'+g.maxMove+'</div><button class="ok" onclick="generalMoveMode('+i+')">⚔ Bu Orduyu Hareket Ettir</button>')}
 function generalReachable(i){var g=generals[i],a=K.info[g.at],r=[];DATA.forEach(function(b){var c=cost(a,b);if(b.name!==a.name&&c<=g.movePoints)r.push(b.name)});return r}
 function generalMoveMode(i){var g=generals[i];closePanel();if(g.movePoints<1){say('⚔ '+g.name+' bu tur hareket edemez.');return}K.mode='generalMove';K.activeGeneral=i;clearGlow();glow(generalReachable(i),'reachable');say('⚔ '+g.name+' • yalnız ulaşabileceği komşu yerleşimler parlıyor.')}
-function moveGeneralTo(n){var i=K.activeGeneral,g=generals[i],a=K.info[g.at],b=K.info[n];if(!g||!b)return;var c=cost(a,b);if(c>g.movePoints){say('⛔ Bu general o yerleşime bu tur ulaşamaz.');return}g.at=n;g.movePoints-=c;g.el.style.left=b.x+'px';g.el.style.top=b.y+'px';K.mode='';clearGlow();say('⚔ '+g.name+' '+n+' konumuna ilerledi. Kalan eylem: '+g.movePoints)}
+function moveGeneralTo(n){var i=K.activeGeneral,g=generals[i],a=K.info[g.at],b=K.info[n];if(!g||!b)return;var c=cost(a,b);if(c>g.movePoints){say('⛔ Bu general o yerleşime bu tur ulaşamaz.');return}g.at=n;g.movePoints-=c;g.el.style.left=b.x+'px';g.el.style.top=b.y+'px';K.mode='';clearGlow();say('⚔ '+g.name+' '+n+' konumuna ilerledi. Kalan eylem: '+g.movePoints);if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,g.army);else checkBattleAt(n)}
 var diplomacy={"Aerion":10,"Valdor":0,"Eldoria":35,"Thalgrim":5,"Vardun":-10,"Drakmir":-35,"Zafran":0,"Lunaris":12};
 function el(i){return document.getElementById(i)} function pts(){return document.getElementsByClassName("settle")}
 function clearGlow(){var a=pts();for(var i=0;i<a.length;i++)a[i].className="settle"}
@@ -173,27 +173,71 @@ function closePanel(){el("panel").style.display="none"}
 function panel(t){el("panel").innerHTML=t;el("panel").style.display="block"}
 function names(){return DATA.map(function(x){return x.name})}
 function dist(a,b){var dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy)}
-function politicalLink(a,b){if(a.region==b.region)return true;var pair=a.region+"|"+b.region;return ["Kaldarya Batı|Kaldarya Merkez","Kaldarya Merkez|Kaldarya Batı","Kaldarya Merkez|Kaldarya Doğu","Kaldarya Doğu|Kaldarya Merkez","Kaldarya Batı|Eldoria","Eldoria|Kaldarya Batı","Kaldarya Doğu|Drakmir","Drakmir|Kaldarya Doğu"].indexOf(pair)>=0}
-var forbiddenDirect={"Gökpınar|Tirel":1,"Tirel|Gökpınar":1,"Eldermere|Serindere":1,"Serindere|Eldermere":1};
-function cost(a,b){
-  var d=dist(a,b),pair=a.name+"|"+b.name;
-  if(forbiddenDirect[pair]||d>105||!politicalLink(a,b))return 99;
-  var hard=(a.terrain+" "+b.terrain);
-  var c=1;
-  if(hard.indexOf("dağ")>=0||hard.indexOf("volkanik")>=0)c=2;
-  else if(hard.indexOf("orman")>=0||hard.indexOf("nehir")>=0||hard.indexOf("çöl")>=0)c=2;
-  return c;
+var militaryAccess={"Aerion":false,"Valdor":false,"Eldoria":false,"Thalgrim":false,"Vardun":false,"Drakmir":false,"Zafran":false,"Lunaris":false};
+var wars={};
+function isKaldaryaRegion(r){return ["Kaldarya Batı","Kaldarya Merkez","Kaldarya Doğu"].indexOf(r)>=0}
+function atWar(a,b){return !!wars[a+"|"+b]||!!wars[b+"|"+a]}
+function setMilitaryAccess(region,on){if(region===K.playerRegion||isKaldaryaRegion(region))return;militaryAccess[region]=!!on;say("🛡 Askerî Geçiş • "+region+": "+(on?"İzin verildi":"İzin yok"))}
+function setWar(a,b,on){wars[a+"|"+b]=!!on;wars[b+"|"+a]=!!on;say("⚔ "+a+" / "+b+": "+(on?"Savaş hâli":"Barış"))}
+function hasMilitaryAccess(from,to){
+ if(from===to)return true;
+ if(isKaldaryaRegion(from)&&isKaldaryaRegion(to))return true;
+ if(from===K.playerRegion)return !!militaryAccess[to];
+ return false;
 }
+function borderPermission(from,to){
+ if(from===to)return true;
+ if(isKaldaryaRegion(from)&&isKaldaryaRegion(to))return true;
+ return atWar(from,to)||hasMilitaryAccess(from,to);
+}
+var normalBorderLinks={
+ "Akasya|Tirel":1,"Tirel|Akasya":1,
+ "Yaprak Ormanı|Onyar":1,"Onyar|Yaprak Ormanı":1
+};
+var specialCorridors={
+ "Solar|Kızılkum":1,"Kızılkum|Solar":1,
+ "Börü Geçit|Taşova":1,"Taşova|Börü Geçit":1,
+ "Börü Geçit|Kervanyolu":1,"Kervanyolu|Börü Geçit":1,
+ "Konukgeçit|Yaşhısar":1,"Yaşhısar|Konukgeçit":1,
+ "Konukgeçit|Taşova":1,"Taşova|Konukgeçit":1
+};
+function isSpecialCorridor(a,b){return !!specialCorridors[a.name+"|"+b.name]}
+function isNormalBorder(a,b){return !!normalBorderLinks[a.name+"|"+b.name]}
+function politicalLink(a,b){
+ if(a.region===b.region)return true;
+ if(isKaldaryaRegion(a.region)&&isKaldaryaRegion(b.region))return true;
+ if(isSpecialCorridor(a,b)||isNormalBorder(a,b))return borderPermission(a.region,b.region);
+ return false;
+}
+function movementCost(a,b,armyOwner){
+ var pair=a.name+"|"+b.name,d=dist(a,b);
+ if(forbiddenDirect[pair])return 99;
+ var special=isSpecialCorridor(a,b);
+ if(!special&&d>105)return 99;
+ if(a.region!==b.region&&!politicalLink(a,b))return 99;
+ /* Zafran dış kara girişi yalnız Solar koridorundan */
+ if(b.region==="Zafran"&&a.region!=="Zafran"&&pair!=="Solar|Kızılkum")return 99;
+ if(a.region==="Zafran"&&b.region!=="Zafran"&&pair!=="Kızılkum|Solar")return 99;
+ if(special)return 1; /* sınırdaki coğrafi engel bu koridorda göz ardı edilir */
+ var hard=(a.terrain+" "+b.terrain),c=1;
+ if(hard.indexOf("dağ")>=0||hard.indexOf("volkanik")>=0||hard.indexOf("orman")>=0||hard.indexOf("nehir")>=0||hard.indexOf("çöl")>=0)c=2;
+ return c;
+}
+var forbiddenDirect={"Gökpınar|Tirel":1,"Tirel|Gökpınar":1,"Eldermere|Serindere":1,"Serindere|Eldermere":1};
+function cost(a,b){return movementCost(a,b,K.playerRegion)}
 function reachable(){var a=K.info[K.at],r=[];DATA.forEach(function(b){var c=cost(a,b);if(b.name!=a.name&&c<=K.movePoints)r.push(b.name)});return r}
 function glow(ns,cls){clearGlow();var a=pts();for(var i=0;i<a.length;i++)if(ns.indexOf(a[i].getAttribute("data-city"))>=0)a[i].className="settle "+(cls||"glow")}
-function ownCities(){return DATA.filter(function(x){return x.region===K.playerRegion}).map(function(x){return x.name})} function chooseMode(){K.mode="city";glow(ownCities(),"glow");say("🏘 Şehir Seç: yalnız kendi sınırlarımızdaki yerleşimlerde yapı ve yönetim işlemleri yapılabilir.")}
+function ownCities(){return DATA.filter(function(x){return ownerOf(x.name)===K.playerRegion}).map(function(x){return x.name})} function chooseMode(){K.mode="city";glow(ownCities(),"glow");say("🏘 Şehir Seç: yalnız kendi sınırlarımızdaki yerleşimlerde yapı ve yönetim işlemleri yapılabilir.")}
 function pawnTap(){openPlayerKing()}
 function openPlayerKing(){var a=K.kingArmy;panel('<div class="row"><h2 style="flex:1">♔ Kral Arven • Kral Ordusu</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>Konum:</b> '+K.at+'<br><b>Asker:</b> '+a.soldiers+'<br><b>İkmal:</b> %'+a.supply+'<br><b>Moral:</b> %'+a.morale+'<br><b>Kral/Komutan deneyimi:</b> '+generalExp(a)+'<br><b>Eylem puanı:</b> '+K.movePoints+'/'+K.maxMove+'</div><button class="ok" onclick="kingMoveMode()">♔ Kral Ordusunu Hareket Ettir</button>')}
 function kingMoveMode(){closePanel();if(K.movePoints<1){clearGlow();say("♔ Kral Ordusunun bu tur eylem puanı bitti.");return}K.mode="move";var r=reachable();glow(r,"reachable");say("♔ Kral Arven hareket ediyor • Eylem puanı: <b>"+K.movePoints+"</b>. Yalnız ulaşılabilen komşu yerleşimler parlıyor.")}
 function tap(n){if(K.mode==="move"){moveTo(n);return}if(K.mode==="generalMove"){moveGeneralTo(n);return}K.mode="";clearGlow();openSettlement(n)}
-function moveTo(n){var a=K.info[K.at],b=K.info[n];if(!b)return;var c=cost(a,b);if(c>K.movePoints){say("⛔ Bu yerleşim doğrudan ulaşılabilir değil veya eylem puanı yetmiyor.");return}K.at=n;K.movePoints-=c;el("pawn").style.left=b.x+"px";el("pawn").style.top=b.y+"px";el("where").textContent=n;K.mode="";clearGlow();say("♟ <b>"+n+"</b> konumuna ulaştın. Harcanan eylem: "+c+" • Kalan: <b>"+K.movePoints+"</b>");setTimeout(function(){checkBattleAt(n)},180)}
-function playerControls(n){var c=K.info[n];return !!c&&c.region===K.playerRegion}
-function openSettlement(n){K.selectedCity=n;var c=K.info[n],s=settlements[n],b=s.buildings.length?s.buildings.join(", "):"Yok",con=s.construction?(s.construction.name+" • "+s.construction.left+" tur kaldı"):"Yok",own=playerControls(n);var actions=own?'<div class="row"><button onclick="governorMenu()">👤 Vali Ata</button><button onclick="buildMenu()">🔨 Bina İnşa Et</button></div>':'<div class="card">🔒 <b>Yabancı yerleşim</b><br><span class="small">Bilgilerini görebilirsin; fakat bu yerleşim kontrolünde olmadığı için vali atayamaz veya yapı inşa edemezsin.</span></div>';panel('<div class="row"><h2 style="flex:1">🏘 '+n+'</h2><button onclick="closePanel()">✕</button></div><div class="small">'+c.region+' • '+c.terrain+' • '+c.protector+'</div><div class="card"><b>Durum:</b> '+s.status+'<br><b>Gelişmişlik:</b> '+s.dev+'/100<div class="meter"><i style="width:'+s.dev+'%"></i></div><b>Vali:</b> '+s.governor+'<br><b>Binalar:</b> '+b+'<br><b>İnşaat:</b> '+con+'</div>'+actions)}
+function moveTo(n){var a=K.info[K.at],b=K.info[n];if(!b)return;var c=cost(a,b);if(c>K.movePoints){say("⛔ Bu yerleşim doğrudan ulaşılabilir değil veya eylem puanı yetmiyor.");return}K.at=n;K.movePoints-=c;el("pawn").style.left=b.x+"px";el("pawn").style.top=b.y+"px";el("where").textContent=n;K.mode="";clearGlow();say("♔ <b>"+n+"</b> konumuna ulaştın. Harcanan eylem: "+c+" • Kalan: <b>"+K.movePoints+"</b>");setTimeout(function(){if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,"Kral Ordusu");else checkBattleAt(n)},180)}
+function ownerOf(n){return settlements[n]?settlements[n].owner:(K.info[n]?K.info[n].region:null)}
+function playerControls(n){return ownerOf(n)===K.playerRegion}
+function setOwner(n,newOwner,by){var st=settlements[n],old=st.owner;if(!st||old===newOwner)return false;st.owner=newOwner;st.occupied=newOwner!==st.originalOwner;st.status=st.occupied?("İşgal altında • "+newOwner):"Kontrol altında";st.governor="Atanmamış";K.news.unshift("Yıl "+K.year+" Ay "+K.month+": "+n+" • "+old+" → "+newOwner+".");K.warHistory=K.warHistory||[];K.warHistory.unshift({turn:K.turn,year:K.year,month:K.month,type:"fetih",city:n,from:old,to:newOwner,army:by||"Ordu"});return true}
+function controlledCount(owner){return DATA.filter(function(c){return ownerOf(c.name)===owner}).length}
+function openSettlement(n){K.selectedCity=n;var c=K.info[n],s=settlements[n],b=s.buildings.length?s.buildings.join(", "):"Yok",con=s.construction?(s.construction.name+" • "+s.construction.left+" tur kaldı"):"Yok",own=playerControls(n);var actions=own?'<div class="row"><button onclick="governorMenu()">👤 Vali Ata</button><button onclick="buildMenu()">🔨 Bina İnşa Et</button></div>':'<div class="card">🔒 <b>Yabancı yerleşim</b><br><span class="small">Bilgilerini görebilirsin; fakat bu yerleşim kontrolünde olmadığı için vali atayamaz veya yapı inşa edemezsin.</span></div>';panel('<div class="row"><h2 style="flex:1">🏘 '+n+'</h2><button onclick="closePanel()">✕</button></div><div class="small">'+c.region+' • '+c.terrain+' • '+c.protector+'</div><div class="card"><b>Kontrol eden:</b> '+ownerOf(n)+'<br><b>Durum:</b> '+s.status+'<br><b>Gelişmişlik:</b> '+s.dev+'/100<div class="meter"><i style="width:'+s.dev+'%"></i></div><b>Vali:</b> '+s.governor+'<br><b>Binalar:</b> '+b+'<br><b>İnşaat:</b> '+con+'</div>'+actions)}
 function governorMenu(){var n=K.selectedCity;if(!playerControls(n)){say('⛔ Başka bir krallığın yerleşimine vali atayamazsın.');openSettlement(n);return}panel('<div class="row"><h2 style="flex:1">Vali Ata • '+n+'</h2><button onclick="openSettlement(\''+n+'\')">←</button></div><div class="card"><b>Hanedandan</b><div class="row"><button onclick="setGov(\'Prens Edric\')">Prens Edric</button><button onclick="setGov(\'Kraliçe Lysa\')">Kraliçe Lysa</button></div></div><div class="card"><b>Yerel Adaylar</b><div class="row"><button onclick="setGov(\'Yerel Vali Harun\')">Harun • Yönetim</button><button onclick="setGov(\'Yerel Vali Sena\')">Sena • Diplomasi</button></div></div>')}
 function setGov(x){if(!playerControls(K.selectedCity)){say('⛔ Kontrol etmediğin yerleşime vali atayamazsın.');return}settlements[K.selectedCity].governor=x;openSettlement(K.selectedCity);say('👤 '+x+' vali olarak atandı.')}
 var BUILD={"Tarla":{cost:2,time:1,bonus:"Üretim + küçük bonus"},"Ağıl":{cost:2,time:1,bonus:"Yerel refah + küçük bonus"},"Han":{cost:3,time:2,bonus:"Gelişmişlik + ticaret"},"Pazar":{cost:5,time:3,bonus:"Yerleşim geliri +"},"Küçük Sur":{cost:5,time:3,bonus:"Savunma +"}};
@@ -224,6 +268,28 @@ var kingdomKings={};
 function createKings(){Object.keys(capitals).forEach(function(region){var city=capitals[region],c=K.info[city];if(!c)return;if(region===K.playerRegion)return;var b=document.createElement('button');b.className='kingPawn';b.id='king_'+region.replace(/\\s/g,'_');b.textContent='♚';b.title=region+' Kralı';b.style.left=c.x+'px';b.style.top=c.y+'px';b.onclick=function(e){e.stopPropagation();showKing(region)};el('stage').appendChild(b);kingdomKings[region]={region:region,at:city,soldiers:18+(Object.keys(kingdomKings).length%4)*4,age:34+(Object.keys(kingdomKings).length%5)*6,serviceTurns:6+(Object.keys(kingdomKings).length%6)*3,battles:Object.keys(kingdomKings).length%5,supply:58+(Object.keys(kingdomKings).length%4)*9,morale:62+(Object.keys(kingdomKings).length%4)*7,traits:(Object.keys(kingdomKings).length%2?["İkmalci"]:["Disiplinli"]),el:b}})}
 function showKing(region){var q=kingdomKings[region];panel('<div class="row"><h2 style="flex:1">♚ '+region+' Kral Ordusu</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>Konum:</b> '+q.at+'<br><b>Ordu:</b> '+q.soldiers+' asker<br><b>İkmal:</b> %'+q.supply+'<br><b>Kral/Komutan deneyimi:</b> '+generalExp(q)+'</div>')}
 function playerArmy(){return K.kingArmy}
+
+function hasSmallWall(n){return settlements[n]&&settlements[n].buildings.indexOf("Küçük Sur")>=0}
+function hostileSettlement(n,armyOwner){var o=ownerOf(n);return !!o&&o!==armyOwner&&atWar(armyOwner,o)}
+function foreignPeacefulSettlement(n,armyOwner){var o=ownerOf(n);return !!o&&o!==armyOwner&&!atWar(armyOwner,o)&&hasMilitaryAccess(armyOwner,o)}
+function captureSettlement(n,newOwner,armyLabel){var old=ownerOf(n);if(old===newOwner)return;if(setOwner(n,newOwner,armyLabel)){say("🚩 <b>"+n+"</b> fethedildi! "+old+" → "+newOwner+".");}}
+function beginOccupation(n,armyOwner,armyLabel){
+ var st=settlements[n];if(!hostileSettlement(n,armyOwner))return;
+ if(hasSmallWall(n)){if(!st.siege||st.siege.attacker!==armyOwner)st.siege={attacker:armyOwner,progress:0,required:3,army:armyLabel};showSiegePanel(n);return}
+ captureSettlement(n,armyOwner,armyLabel);
+}
+function showSiegePanel(n){var q=settlements[n].siege;panel('<div class="row"><h2 style="flex:1">🏰 '+n+' Kuşatması</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>Savunan:</b> '+ownerOf(n)+'<br><b>Kuşatan:</b> '+q.attacker+' • '+q.army+'<br><b>İlerleme:</b> '+q.progress+'/'+q.required+' tur<br><span class="small">Küçük Sur nedeniyle yerleşim tek hamlede düşmez. Kuşatan ordu burada kalmalı ve ikmal harcar.</span></div>')}
+function armyAtFor(owner,n){
+ if(owner===K.playerRegion){if(K.at===n&&K.kingArmy.soldiers>0)return K.kingArmy;for(var i=0;i<generals.length;i++){var g=generals[i];if(g.onDuty&&g.at===n&&g.soldiers>0)return g}}
+ var a=kingdomKings[owner];return a&&a.at===n&&a.soldiers>0?a:null
+}
+function progressSieges(){DATA.forEach(function(c){var st=settlements[c.name],q=st.siege;if(!q)return;var a=armyAtFor(q.attacker,c.name);if(!a){st.siege=null;return}a.supply=Math.max(0,(a.supply||0)-7);if(a.supply<20){a.morale=Math.max(0,(a.morale||0)-8);return}q.progress++;if(q.progress>=q.required){captureSettlement(c.name,q.attacker,q.army);st.siege=null}})}
+function resolveArrivalConquest(n,armyOwner,armyLabel){
+ if(!hostileSettlement(n,armyOwner))return;
+ var defender=ownerOf(n),enemy=kingdomKings[defender];
+ if(armyOwner===K.playerRegion&&enemy&&enemy.at===n&&enemy.soldiers>0){battlePanel(defender);return}
+ beginOccupation(n,armyOwner,armyLabel);
+}
 function traitBonus(a){var t=a.traits||[],b=0;if(t.indexOf("Disiplinli")>=0)b+=.07;if(t.indexOf("İkmalci")>=0)b+=.05;if(t.indexOf("Cesur")>=0)b+=.04;return b}
 function terrainBattleMod(city,attacking){
   var c=K.info[city],t=c?c.terrain:"";
@@ -283,14 +349,14 @@ function resolveBattle(region){
     if(pc&&!decisive){K.at=pc;var cp=K.info[pc];el('pawn').style.left=cp.x+'px';el('pawn').style.top=cp.y+'px';retreat='Kaldarya Kral Ordusu '+pc+' yönüne çekildi.'}
     else if(!pc||decisive){p.soldiers=0;p.morale=0;retreat='Kaldarya Kral Ordusu '+(decisive?'ezici yenilgi sonrası ':'kaçış yolu kalmadığı için ')+'dağıldı.'}
   }
-  recordBattle(region,win,city,lossP,lossE);
+  recordBattle(region,win,city,lossP,lossE);if(win&&p.soldiers>0&&hostileSettlement(city,K.playerRegion)){setTimeout(function(){beginOccupation(city,K.playerRegion,"Kral Ordusu")},300);}
   panel('<div class="row"><h2 style="flex:1">'+(win?'🏆 ZAFER':'⚔ YENİLGİ')+'</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>'+(decisive?'Ağır sonuçlu muharebe':'Muharebe sonucu')+'</b><br>Kaldarya kaybı: '+lossP+' asker<br>'+region+' kaybı: '+lossE+' asker<br>Kaldarya ikmal: %'+p.supply+' • moral: %'+p.morale+'<br><b>Savaş yorgunluğu:</b> %'+K.warFatigue+'<br>'+retreat+'</div>')
 }
 function checkBattleAt(city){Object.keys(kingdomKings).forEach(function(r){if(kingdomKings[r].at===city&&kingdomKings[r].soldiers>0)battlePanel(r)})}
 function startSiege(city,attacker){if(!hasSmallWall(city))return false;var key=attacker+'|'+city;if(!K.sieges[key])K.sieges[key]={turns:0,needed:2};K.sieges[key].turns++;K.warFatigue=Math.min(100,K.warFatigue+2);say('🏰 '+city+' kuşatması: '+K.sieges[key].turns+'/'+K.sieges[key].needed+' tur. Küçük Sur nedeniyle şehir doğrudan düşmez.');if(K.sieges[key].turns>=K.sieges[key].needed){K.news.unshift(city+' kuşatması tamamlandı.');delete K.sieges[key];return false}return true}
 function openWarHistory(){var h=K.battleHistory.length?K.battleHistory.slice(0,12).map(function(x){return '<div class="card"><b>'+x.city+' Muharebesi</b> • Yıl '+x.year+', Ay '+x.month+'<br>'+x.enemy+' • '+x.result+' • Kayıplar '+x.lossP+'/'+x.lossE+'</div>'}).join(''):'<div class="card">Henüz kayıtlı muharebe yok.</div>';panel('<div class="row"><h2 style="flex:1">📜 Savaş Geçmişi</h2><button onclick="closePanel()">✕</button></div>'+h)}
 function advanceCalendar(){K.month+=4;if(K.month>12){K.month-=12;K.year++}el('cal').textContent='Yıl '+K.year+' • Ay '+K.month}
-function endTurn(){K.turn++;K.movePoints=K.maxMove;advanceCalendar();
+function endTurn(){K.turn++;K.movePoints=K.maxMove;advanceCalendar();progressSieges();var landIncome=controlledCount(K.playerRegion);K.gold+=landIncome;K.news.unshift("Yıl "+K.year+" Ay "+K.month+": "+landIncome+" kontrol edilen yerleşimden "+landIncome+" altın gelir.");
 var ka=K.kingArmy;
 if(ka){
   ka.serviceTurns++;
@@ -298,7 +364,7 @@ if(ka){
   if(K.gold>=kingUpkeep){K.gold-=kingUpkeep;ka.supply=Math.min(100,ka.supply+3);ka.morale=Math.min(100,ka.morale+1)}
   else{ka.supply=Math.max(0,ka.supply-10);ka.morale=Math.max(0,ka.morale-6)}
 }
-generals.forEach(function(g){if(g.onDuty){g.movePoints=g.maxMove||2;g.serviceTurns++;var upkeep=Math.max(0,Math.ceil(Math.max(0,g.soldiers-10)/5)*2);if(K.gold>=upkeep){K.gold-=upkeep;g.supply=Math.min(100,(g.supply||60)+3);g.morale=Math.min(100,(g.morale||70)+1)}else{g.supply=Math.max(0,(g.supply||60)-10);g.morale=Math.max(0,(g.morale||70)-6)}}});if(K.warFatigue>0){K.peopleHappy=Math.max(0,K.peopleHappy-Math.ceil(K.warFatigue/40));K.gold=Math.max(0,K.gold-Math.floor(K.warFatigue/35));K.warFatigue=Math.max(0,K.warFatigue-1)}var income=DATA.filter(function(x){return x.region==='Kaldarya Merkez'}).length;K.gold+=income;processBuilds();if(K.tax>=75){K.peopleHappy=Math.max(0,K.peopleHappy-2);K.peopleLoyal=Math.max(0,K.peopleLoyal-1)}if(K.military===0)K.armyLoyal=Math.max(0,K.armyLoyal-2);sync();clearGlow();say('Tur '+K.turn+' başladı • 4 ay geçti • Yerleşim geliri +'+income+' altın.');setTimeout(dynamicEvent,350)}
+generals.forEach(function(g){if(g.onDuty){g.movePoints=g.maxMove||2;g.serviceTurns++;var upkeep=Math.max(0,Math.ceil(Math.max(0,g.soldiers-10)/5)*2);if(K.gold>=upkeep){K.gold-=upkeep;g.supply=Math.min(100,(g.supply||60)+3);g.morale=Math.min(100,(g.morale||70)+1)}else{g.supply=Math.max(0,(g.supply||60)-10);g.morale=Math.max(0,(g.morale||70)-6)}}});if(K.warFatigue>0){K.peopleHappy=Math.max(0,K.peopleHappy-Math.ceil(K.warFatigue/40));K.gold=Math.max(0,K.gold-Math.floor(K.warFatigue/35));K.warFatigue=Math.max(0,K.warFatigue-1)}var income=landIncome;processBuilds();if(K.tax>=75){K.peopleHappy=Math.max(0,K.peopleHappy-2);K.peopleLoyal=Math.max(0,K.peopleLoyal-1)}if(K.military===0)K.armyLoyal=Math.max(0,K.armyLoyal-2);sync();clearGlow();say('Tur '+K.turn+' başladı • 4 ay geçti • Kontrol edilen yerleşim geliri +'+income+' altın.');setTimeout(dynamicEvent,350)}
 function sync(){el('turn').textContent=K.turn;el('gold').textContent=K.gold;el('food').textContent=K.food;if(el('cal'))el('cal').textContent='Yıl '+K.year+' • Ay '+K.month}
 var Z=1;function applyZoom(){el('stage').style.transform='scale('+Z+')'}function zoomIn(){Z=Math.min(2.4,Z+.15);applyZoom()}function zoomOut(){Z=Math.max(.5,Z-.15);applyZoom()}
 function boot(){var a=pts();for(var i=0;i<a.length;i++)a[i].onclick=function(){tap(this.getAttribute('data-city'))};el('pawn').onclick=pawnTap;createKings();createGeneralPawns();sync();say('V20 güncel ✓ Kral piyonu ve ayrı general orduları etkin. Yabancı yerleşimlerde yönetim kilitli.  Savaş sistemi sertleştirildi: asker sayısı, ikmal, moral, komutan deneyimi ve arazi belirleyici; rastgelelik sınırlandı, yenilgi/bozgun sonuçları ağırlaştırıldı. Coğrafi hareket kısıtları ve Kral Ordusu bakımı korunuyor.')}
