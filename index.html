@@ -335,13 +335,20 @@ function kingMoveMode(){closePanel();if(!canSpendAction()){clearGlow();say("⛔ 
 function tap(n){if(K.mode==="move"){moveTo(n);return}if(K.mode==="generalMove"){moveGeneralTo(n);return}K.mode="";clearGlow();openSettlement(n)}
 function moveTo(n){var a=K.info[K.at],b=K.info[n];if(!b)return;var c=movementCost(a,b,K.playerRegion);if(c>=99){say("⛔ Bu yerleşime doğrudan geçiş yok.");return}if(!spendAction("Kral hareketi"))return;K.at=n;el("pawn").style.left=b.x+"px";el("pawn").style.top=b.y+"px";el("where").textContent=n;K.mode="";clearGlow();say("♔ <b>"+n+"</b> konumuna ulaştın. Krallık eylem puanı: <b>"+actionText()+"</b>");setTimeout(function(){if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,"Kral Ordusu",K.kingArmy);else checkBattleAt(n,K.kingArmy)},180)}
 
+var territoryShapes=[
+ "polygon(14% 8%,72% 4%,96% 31%,88% 78%,58% 96%,17% 87%,3% 48%)",
+ "polygon(9% 18%,56% 3%,93% 22%,97% 67%,69% 94%,24% 91%,2% 55%)",
+ "polygon(18% 4%,78% 9%,96% 45%,82% 91%,39% 97%,5% 72%,4% 29%)",
+ "polygon(6% 28%,31% 5%,81% 7%,98% 39%,89% 84%,48% 97%,9% 76%)"
+];
+function fixedTerritoryShape(n){var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return territoryShapes[h%territoryShapes.length]}
 var kingdomColors={"Kaldarya Merkez":"#d7d7d2","Kaldarya Batı":"#5d9b58","Kaldarya Doğu":"#c85f55","Eldoria":"#4f8b4b","Drakmir":"#9e302e","Zafran":"#d58a34","Aerion":"#4f4a8f","Valdor":"#c7a64b","Vardun":"#c98235","Lunaris":"#76519c","Thalgrim":"#c9d4d9"};
 function refreshTerritoryTint(n){
  var c=K.info[n],st=settlements[n];if(!c||!st)return;
  var id="tint_"+n.replace(/[^A-Za-z0-9]/g,"_"),x=document.getElementById(id);
  if(st.owner===st.originalOwner){if(x)x.remove();return}
  if(!x){x=document.createElement("div");x.id=id;x.className="territoryTint";el("stage").appendChild(x)}
- x.style.left=c.x+"px";x.style.top=c.y+"px";x.style.background=kingdomColors[st.owner]||"#ddd";
+ x.style.left=c.x+"px";x.style.top=c.y+"px";x.style.background=kingdomColors[st.owner]||"#ddd";x.style.clipPath=fixedTerritoryShape(n);
  x.title=n+" • "+st.owner+" • Fethedilmiş yerleşim alanı";
 }
 function refreshAllTerritoryTints(){DATA.forEach(function(c){refreshTerritoryTint(c.name)})}
