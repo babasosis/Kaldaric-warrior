@@ -496,7 +496,7 @@ function formNewKingArmy(name,city,reason){K.kingName=name;K.kingAlive=true;K.at
 function fragmentKingdomAfterKingDeath(oldKing){var cap=capitals[K.playerRegion]||"Sancaktepe",owned=DATA.filter(function(c){return settlements[c.name]&&settlements[c.name].owner===K.playerRegion&&c.name!==cap});var rebel="Kaldarya İsyancıları";kingdomColors[rebel]="#6f5a49";owned.forEach(function(c){settlements[c.name].owner=rebel;settlements[c.name].occupied=true;refreshTerritoryTint(c.name)});refreshWestNeckTint();K.kingArmy.soldiers=0;K.kingAlive=false;if(el("pawn"))el("pawn").style.display="none";K.news.unshift("⚠ "+oldKing+" öldü; varis bulunamadı ve düşük halk/ordu sadakati nedeniyle krallık parçalandı. Başkent dışındaki bölgelerde isyancı yönetimler ortaya çıktı.");say("⚠ KRALLIK PARÇALANDI: Varis yok ve sadakat düşük. Daha önce belirlenen 15 turluk isyancı devlet tanınma süreci başladı.")}
 function handleKingDeath(region,city){var old=markOldKingDead(),heir=livingOfficialHeir(),spawn=controlledSpawnCity();if(heir&&spawn){heir.role="Kral";heir.age=Math.max(16,heir.age||16);formNewKingArmy(heir.name,spawn,"Resmî varis olarak hanedanın devamını sağladı.");return}var loyalty=((K.peopleLoyal||0)+(K.armyLoyal||0))/2;if(!heir&&loyalty<45){fragmentKingdomAfterKingDeath(old);return}if(spawn){var elected={name:"Kral Darven",age:36,role:"Kral",traits:["Ordu ve Halkın Seçimi"],alive:true};dynasty.push(elected);formNewKingArmy(elected.name,spawn,"Varis bulunmadığı için halk ve ordu yeni hükümdarı seçti.");return}K.kingArmy.soldiers=0;K.kingAlive=false;if(el("pawn"))el("pawn").style.display="none";say("☠ "+old+" öldü ve krallığın kontrolünde yeni Kral Ordusu kurulabilecek yerleşim kalmadı.")}
 
-/* V27.0 — Düşman Kral Ordusu yenilgisi / veraset düzeltmesi
+/* V27.1 — Düşman Kral Ordusu yenilgisi / veraset düzeltmesi
    Kral Ordusu = kralın kendisi. Bir kral ordusu muharebeyi kaybettiğinde kral ölür.
    Ardından: varis -> yeni kral ordusu; varis yok ama sadakat yeterli -> halk/ordu seçimi;
    varis yok ve sadakat düşük -> parçalanma. */
@@ -557,7 +557,7 @@ function fragmentAIKingdom(region,deadCity){
 }
 
 
-/* V27.0 — Bütün krallıklar için ortak devlet/yönetim simülasyonu */
+/* V27.1 — Bütün krallıklar için ortak devlet/yönetim simülasyonu */
 var WORLD_GOV = {};
 function allKingdomNames(){
   var z={};
@@ -638,9 +638,9 @@ function kingdomManagementSnapshot(region){
   };
 }
 
-/* V27.0 — Krallığın kesin yıkılışı + hanedanın akıbeti */
+/* V27.1 — Krallığın kesin yıkılışı + hanedanın akıbeti */
 
-/* V27.0 — Tam bölge fetih rengi optimizasyonu */
+/* V27.1 — Tam bölge fetih rengi optimizasyonu */
 function regionOriginalCities(region){
   return DATA.filter(function(c){return c.region===region});
 }
@@ -743,7 +743,7 @@ function endWarWithDestroyedKingdom(region){
   K.news.unshift("🕊 "+region+" artık var olmadığı için bu devletle savaş sona erdi.");
 }
 
-/* V27.0 — TAM BÖLGE siyasi renk katmanı.
+/* V27.1 — TAM BÖLGE siyasi renk katmanı.
    Şehir çevresi lekesi değildir. Tam fetihte bölgenin tek siyasi yüzeyi boyanır. */
 function ensureFullRegionLayer(){
   var map=document.querySelector("#map")||document.querySelector(".map")||document.querySelector("#mapWorld")||document.querySelector(".mapWorld");
@@ -908,25 +908,25 @@ if(ka){
 generals.forEach(function(g){if(g.onDuty){g.serviceTurns++;var upkeep=armyUpkeep(g.soldiers);if(K.gold>=upkeep){K.gold-=upkeep;g.supply=Math.min(100,(g.supply||60)+3);g.morale=Math.min(100,(g.morale||70)+1)}else{g.supply=Math.max(0,(g.supply||60)-10);g.morale=Math.max(0,(g.morale||70)-6)}}});if(K.warFatigue>0){K.peopleHappy=Math.max(0,K.peopleHappy-Math.ceil(K.warFatigue/40));K.gold=Math.max(0,K.gold-Math.floor(K.warFatigue/35));K.warFatigue=Math.max(0,K.warFatigue-1)}var income=landIncome;processBuilds();if(K.tax>=75){K.peopleHappy=Math.max(0,K.peopleHappy-2);K.peopleLoyal=Math.max(0,K.peopleLoyal-1)}if(K.military===0)K.armyLoyal=Math.max(0,K.armyLoyal-2);sync();clearGlow();say('Tur '+K.turn+' başladı • 4 ay geçti • Krallık eylem puanı: 3/3 • Kontrol edilen yerleşim geliri +'+income+' altın.');setTimeout(dynamicEvent,350)}
 function sync(){el('turn').textContent=K.turn;el('gold').textContent=K.gold;el('food').textContent=K.food;if(el('cal'))el('cal').textContent='Yıl '+K.year+' • Ay '+K.month}
 var Z=1;function applyZoom(){el('stage').style.transform='scale('+Z+')'}function zoomIn(){Z=Math.min(2.4,Z+.15);applyZoom()}function zoomOut(){Z=Math.max(.5,Z-.15);applyZoom()}
-function boot(){var a=pts();for(var i=0;i<a.length;i++)a[i].onclick=function(){tap(this.getAttribute("data-city"))};el("pawn").onclick=pawnTap;createKings();createGeneralPawns();refreshAllTerritoryTints();sync();say("V27.0 ✓ Kaldarya Batı–Merkez dar sınır maskesi düzeltildi. Kral daima Kral Ordusu başındadır; Kral Ordusu yenilirse kral ölür ve varis/seçim/parçalanma sistemi devreye girer. •  Her krallık için tur başına 3 ortak eylem puanı; kral/general hareketi ve bina başlatma 1 EP. Mesafeye dayalı otomatik bağlantı kaldırıldı; yalnız sabit yol/geçit ağı kullanılır. Kumkapı, Kızılkum ile Karahisar arasına Zafran geçit şehri olarak eklendi ve Solar↔Kumkapı ana kara kapısıdır. Stratejik geçit savunucuları ek arazi avantajı alır; Onyar↔Yaprak Ormanı kapalıdır. Fethedilen yerleşimler yeni sahibin siyasi rengiyle işaretlenir. Yönetim Merkezi Hapishane, hanedan/vali esirleri, fidye-serbest bırakma-öldürme ve general ölüm/esir riski etkin.")}
+function boot(){var a=pts();for(var i=0;i<a.length;i++)a[i].onclick=function(){tap(this.getAttribute("data-city"))};el("pawn").onclick=pawnTap;createKings();createGeneralPawns();refreshAllTerritoryTints();sync();say("V27.1 ✓ Kaldarya Batı–Merkez dar sınır maskesi düzeltildi. Kral daima Kral Ordusu başındadır; Kral Ordusu yenilirse kral ölür ve varis/seçim/parçalanma sistemi devreye girer. •  Her krallık için tur başına 3 ortak eylem puanı; kral/general hareketi ve bina başlatma 1 EP. Mesafeye dayalı otomatik bağlantı kaldırıldı; yalnız sabit yol/geçit ağı kullanılır. Kumkapı, Kızılkum ile Karahisar arasına Zafran geçit şehri olarak eklendi ve Solar↔Kumkapı ana kara kapısıdır. Stratejik geçit savunucuları ek arazi avantajı alır; Onyar↔Yaprak Ormanı kapalıdır. Fethedilen yerleşimler yeni sahibin siyasi rengiyle işaretlenir. Yönetim Merkezi Hapishane, hanedan/vali esirleri, fidye-serbest bırakma-öldürme ve general ölüm/esir riski etkin.")}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,false);else boot();
 </script></body></html>
-<!-- V27.0: enemy king army defeat now triggers death + succession/election/fragmentation. -->
+<!-- V27.1: enemy king army defeat now triggers death + succession/election/fragmentation. -->
 
-<!-- V27.0: 0 territory + no King Army => kingdom destroyed; surviving dynasty fate resolved as exile/death/disappearance. -->
+<!-- V27.1: 0 territory + no King Army => kingdom destroyed; surviving dynasty fate resolved as exile/death/disappearance. -->
 
 <script>
-/* V27.0 geç yüklenen dünya yönetimlerini ve siyasi renkleri başlat */
+/* V27.1 geç yüklenen dünya yönetimlerini ve siyasi renkleri başlat */
 setTimeout(function(){
   try{ initAllGovernments(); refreshAllWholeRegionColors(); }
-  catch(e){ console.warn("V27.0 init",e); }
+  catch(e){ console.warn("V27.1 init",e); }
 },250);
 </script>
 
-<!-- V27.0: all kingdoms share government data; full conquest destruction precedence; whole-region conquest color refresh. -->
+<!-- V27.1: all kingdoms share government data; full conquest destruction precedence; whole-region conquest color refresh. -->
 
 <script>
-/* V27.0 — Büyük krallıklar için stratejik/diplomatik AI çekirdeği */
+/* V27.1 — Büyük krallıklar için stratejik/diplomatik AI çekirdeği */
 var AI_STATE={};
 function aiProfile(region){
   if(!AI_STATE[region]) AI_STATE[region]={
@@ -968,10 +968,10 @@ function runAllKingdomAI(){
 }
 </script>
 
-<!-- V27.0: real dynasty-first succession, destroyed-state war cleanup, conquest visual optimization, strategic/diplomatic AI state. -->
+<!-- V27.1: real dynasty-first succession, destroyed-state war cleanup, conquest visual optimization, strategic/diplomatic AI state. -->
 
 <script>
-/* V27.0 — GERÇEK Kral Ordusu AI: plan üretmekle kalmaz, haritada yasal komşu şehre hareket eder. */
+/* V27.1 — GERÇEK Kral Ordusu AI: plan üretmekle kalmaz, haritada yasal komşu şehre hareket eder. */
 function explicitNeighbors(city){
   var out=[];
   try{
@@ -1045,4 +1045,212 @@ setTimeout(function(){
 },400);
 </script>
 
-<!-- V27.0 focused fix: full Kaldarya Batı political surface recolor + actual legal-network King Army AI movement. -->
+<!-- V27.1 focused fix: full Kaldarya Batı political surface recolor + actual legal-network King Army AI movement. -->
+
+<script>
+/* ===== V27.1: AI ORDU + GENERAL İŞE ALMA + TAM FETİH SİYASİ MASKE ===== */
+
+var AI_ARMIES = window.AI_ARMIES || {};
+var GENERAL_MARKET = window.GENERAL_MARKET || {};
+
+function govOf(r){ return (typeof syncGovernment==="function") ? syncGovernment(r) : initWorldGovernment(r); }
+function aiTreasury(r){ var g=govOf(r); return Number(g.treasury||0); }
+function spendAIGold(r,n){ var g=govOf(r); if((g.treasury||0)<n)return false; g.treasury-=n; return true; }
+
+function generalPrice(g){
+  var exp=Math.max(0,Math.min(10,Number(g.experience||0)));
+  var skill=Math.max(0,Math.min(10,Number(g.skill||0)));
+  var traits=(g.traits||[]).length;
+  return Math.max(10,Math.min(50,10+Math.round(exp*2+skill*2+traits*3)));
+}
+function makeGeneralCandidate(region,i){
+  var seed=(region.length*17+i*13+(K.turn||1)*7);
+  var exp=1+(seed%9), skill=1+((seed*3)%9);
+  var traitPool=["Disiplinli","İkmalci","Savunmacı","Süvari Ustası","Kuşatma Uzmanı","Cesur"];
+  var g={
+    id:region.replace(/\s/g,"_")+"_aday_"+(K.turn||1)+"_"+i,
+    name:region+" Komutanı "+(i+1),
+    age:24+(seed%27), experience:exp, skill:skill,
+    traits:[traitPool[seed%traitPool.length]],
+    alive:true,captured:false
+  };
+  g.price=generalPrice(g); return g;
+}
+function refreshGeneralMarket(region){
+  GENERAL_MARKET[region]=[0,1,2].map(function(i){return makeGeneralCandidate(region,i)});
+  return GENERAL_MARKET[region];
+}
+function kingdomArmyState(region){
+  if(!AI_ARMIES[region]){
+    var cap=capitals[region] || (aiOwnedCities(region)[0]&&aiOwnedCities(region)[0].name);
+    AI_ARMIES[region]={
+      generals:[
+        {name:region+" Generali I",alive:true,captured:false,soldiers:8,morale:70,supply:70,at:cap,experience:2,skill:4},
+        {name:region+" Generali II",alive:true,captured:false,soldiers:8,morale:70,supply:70,at:cap,experience:2,skill:4}
+      ]
+    };
+  }
+  return AI_ARMIES[region];
+}
+function initAllAIArmies(){
+  allKingdomNames().forEach(function(r){
+    if(r!=="Kaldarya Merkez" && !destroyedKingdoms[r]) kingdomArmyState(r);
+  });
+}
+function hireGeneral(region,candidate){
+  var st=kingdomArmyState(region), g=govOf(region), price=generalPrice(candidate);
+  if((g.treasury||0)<price)return false;
+  var slot=st.generals.findIndex(function(x){return !x || !x.alive || x.soldiers<=0});
+  if(slot<0 && st.generals.length>=2)return false; // iki aktif general kadrosu
+  g.treasury-=price;
+  var cap=capitals[region] || (aiOwnedCities(region)[0]&&aiOwnedCities(region)[0].name);
+  var ng=Object.assign({},candidate,{alive:true,captured:false,soldiers:8,morale:70,supply:70,at:cap});
+  if(slot>=0)st.generals[slot]=ng; else st.generals.push(ng);
+  g.history.unshift(ng.name+" "+price+" altına işe alındı ve yeni General Ordusu kuruldu.");
+  return ng;
+}
+function aiRecruitSoldiers(region,army){
+  var g=govOf(region);
+  if(!army || !army.alive || army.captured || army.soldiers>=16)return false;
+  if((g.treasury||0)<8)return false;
+  g.treasury-=8; army.soldiers+=5;
+  return true;
+}
+function aiReplaceLostGeneral(region){
+  var st=kingdomArmyState(region);
+  if(!st.generals.some(function(x){return !x || !x.alive || x.soldiers<=0}))return false;
+  var market=GENERAL_MARKET[region]||refreshGeneralMarket(region);
+  var affordable=market.filter(function(c){return generalPrice(c)<=aiTreasury(region)})
+                       .sort(function(a,b){return (b.skill+b.experience)-(a.skill+a.experience)});
+  return affordable.length ? !!hireGeneral(region,affordable[0]) : false;
+}
+
+/* AI kral + iki general aynı ortak 3 AP havuzunu kullanır. */
+function legalArmyNeighbors(city){ return explicitNeighbors(city); }
+function chooseAIMoveForArmy(region,army){
+  var ns=legalArmyNeighbors(army.at); if(!ns.length)return null;
+  var own=ns.filter(function(n){return settlements[n]&&settlements[n].owner===region});
+  var foreign=ns.filter(function(n){return settlements[n]&&settlements[n].owner!==region});
+  if((army.soldiers||0)<=6 || (army.morale||0)<45 || (army.supply||0)<40)
+    return own[0]||null;
+  var prof=aiProfile(region);
+  if(prof.stance==="yayılmacı" && foreign.length)return foreign[0];
+  return own[Math.floor((K.turn||1)%Math.max(1,own.length))] || foreign[0] || null;
+}
+function moveAIArmy(region,army){
+  var a=aiProfile(region); if(a.actionPoints<=0 || !army || !army.alive || army.captured)return false;
+  var to=chooseAIMoveForArmy(region,army); if(!to || to===army.at)return false;
+  var from=army.at; army.at=to; army.supply=Math.max(0,(army.supply||70)-4); a.actionPoints--;
+  K.news.unshift("⚔ "+region+" / "+army.name+": "+from+" → "+to);
+  return true;
+}
+function runStrategicAI(region){
+  if(destroyedKingdoms[region])return;
+  var a=aiProfile(region), g=govOf(region), ks=kingdomArmyState(region), king=kingdomKings[region];
+  a.actionPoints=3;
+
+  /* savaş kayıplarını gerçekten telafi et */
+  if(a.actionPoints>0){
+    var weak=[king].concat(ks.generals).find(function(x){return x&&x.soldiers>0&&x.soldiers<10});
+    if(weak && aiRecruitSoldiers(region,weak))a.actionPoints--;
+    else if(aiReplaceLostGeneral(region))a.actionPoints--;
+  }
+
+  /* kalan AP ile kral ve generaller gerçekten hareket eder */
+  var units=[];
+  if(king&&king.soldiers>0) units.push(king);
+  ks.generals.forEach(function(x){if(x&&x.alive&&!x.captured&&x.soldiers>0)units.push(x)});
+  for(var i=0;i<units.length && a.actionPoints>0;i++) moveAIArmy(region,units[i]);
+
+  /* hareket mümkün değilse yönetim/diplomasiye AP ayır */
+  if(a.actionPoints>0){
+    var loy=(g.peopleLoyalty+g.armyLoyalty)/2;
+    g.diplomacy.aiIntent=loy<45?"barış/istikrar ara":
+      (a.stance==="diplomatik"?"dostluk/askerî geçiş ara":
+       a.stance==="yayılmacı"?"sınır ve stratejik geçit baskısı":"savunmayı güçlendir");
+    a.actionPoints--;
+  }
+  if(a.actionPoints>0){
+    if(g.peopleLoyalty<45){g.publicAid=Math.min(100,g.publicAid+25);g.taxRate=Math.max(0,g.taxRate-25);}
+    else if(g.treasury<15)g.taxRate=Math.min(100,g.taxRate+25);
+    else if(g.armyLoyalty<45)g.militaryAid=Math.min(100,g.militaryAid+25);
+    a.actionPoints--;
+  }
+}
+function runAllKingdomAI(){
+  allKingdomNames().forEach(function(r){if(r!=="Kaldarya Merkez")runStrategicAI(r)});
+}
+
+/* Aile Ağacı > Generaller sol üst işe alma paneli */
+function generalHirePanelHTML(region){
+  var market=GENERAL_MARKET[region]||refreshGeneralMarket(region);
+  var g=govOf(region), st=kingdomArmyState(region);
+  var active=st.generals.filter(function(x){return x&&x.alive&&!x.captured&&x.soldiers>0});
+  var cards=market.map(function(c,i){
+    var p=generalPrice(c), disabled=(g.treasury<p || active.length>=2)?"disabled":"";
+    return '<div class="generalCandidate" style="border:1px solid #8b744b;padding:7px;margin:5px 0;border-radius:7px">'+
+      '<b>'+c.name+'</b><br><small>Yaş '+c.age+' · Tecrübe '+c.experience+'/10 · Beceri '+c.skill+'/10 · '+c.traits.join(", ")+'</small><br>'+
+      '<button '+disabled+' onclick=\'hireGeneralFromUI('+JSON.stringify(region)+','+i+')\'>İşe Al — '+p+' altın</button></div>';
+  }).join("");
+  return '<div id="generalHireBox" style="text-align:left"><h3 style="margin:0 0 6px">Generaller</h3>'+
+    '<button onclick="toggleGeneralMarket()">➕ General İşe Al</button>'+
+    '<div id="generalMarketBox" style="display:none;margin-top:8px">'+cards+'</div></div>';
+}
+function toggleGeneralMarket(){
+  var x=document.getElementById("generalMarketBox"); if(x)x.style.display=x.style.display==="none"?"block":"none";
+}
+function hireGeneralFromUI(region,index){
+  var m=GENERAL_MARKET[region]||refreshGeneralMarket(region), c=m[index];
+  if(!c)return;
+  var r=hireGeneral(region,c);
+  if(!r){say("General işe alınamadı. Hazineyi ve aktif general kadrosunu kontrol et.");return;}
+  refreshGeneralMarket(region);
+  say("⚔ <b>"+r.name+"</b> işe alındı. Yeni General Ordusu kuruldu.");
+  injectGeneralHireUI(region);
+}
+function injectGeneralHireUI(region){
+  var root=document.querySelector("#familyTree,.familyTree,#dynastyPanel,.dynastyPanel,#familyPanel,.familyPanel");
+  if(!root)return false;
+  var old=root.querySelector("#generalHireBox"); if(old)old.remove();
+  var wrap=document.createElement("div"); wrap.innerHTML=generalHirePanelHTML(region);
+  var el=wrap.firstElementChild; el.style.position="relative"; el.style.float="left"; el.style.margin="8px";
+  root.insertBefore(el,root.firstChild); return true;
+}
+
+/* Tam fetihte Batı siyasi yüzeyi: ana harita dokusunu koruyan, daha doğru sıkı maske. */
+function fullRegionPolygon(region){
+  if(region==="Kaldarya Batı")
+    return "333,532 385,492 465,470 552,466 640,482 704,514 748,553 770,602 765,650 746,694 716,731 671,763 615,785 548,792 480,783 423,758 375,721 344,675 326,620";
+  return null;
+}
+function repaintFullConquest(region){
+  var owner=wholeRegionOwner(region);
+  if(!owner || owner===region)return;
+  paintFullConqueredRegion(region,owner);
+  optimizeConqueredRegionVisual(region);
+}
+
+/* İlk yükleme */
+setTimeout(function(){
+  try{
+    initAllAIArmies();
+    allKingdomNames().forEach(function(r){ if(r!=="Kaldarya Merkez") refreshGeneralMarket(r); });
+    repaintFullConquest("Kaldarya Batı");
+    injectGeneralHireUI("Kaldarya Merkez");
+  }catch(e){console.warn("V27.1 init",e);}
+},500);
+</script>
+
+<script>
+setTimeout(function(){
+ try{
+   var obs=new MutationObserver(function(){
+     var root=document.querySelector("#familyTree,.familyTree,#dynastyPanel,.dynastyPanel,#familyPanel,.familyPanel");
+     if(root && !root.querySelector("#generalHireBox")) injectGeneralHireUI("Kaldarya Merkez");
+   });
+   obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["style","class"]});
+ }catch(e){}
+},700);
+</script>
+
+<!-- V27.1: 2 AI generals per kingdom, shared 3 AP, recruitment 10-50 gold, Family Tree hire UI, army replenishment/movement, tighter full-conquest political mask. -->
