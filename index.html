@@ -495,6 +495,151 @@ function markOldKingDead(){var old=K.kingName||"Kral Arven",d=dynasty.find(funct
 function formNewKingArmy(name,city,reason){K.kingName=name;K.kingAlive=true;K.at=city;K.kingArmy={name:"Kaldarya Kral Ordusu",soldiers:8,age:18,serviceTurns:0,battles:0,supply:72,morale:70,traits:["Yeni Hükümdar"]};var c=K.info[city];if(c&&el("pawn")){el("pawn").style.display="block";el("pawn").style.left=c.x+"px";el("pawn").style.top=c.y+"px"}K.news.unshift("♔ "+name+" "+city+"'de yeni Kral Ordusu'nu kurdu. "+reason);say("♔ "+name+" tahta çıktı. Yeni Kral Ordusu "+city+"'de kuruldu.")}
 function fragmentKingdomAfterKingDeath(oldKing){var cap=capitals[K.playerRegion]||"Sancaktepe",owned=DATA.filter(function(c){return settlements[c.name]&&settlements[c.name].owner===K.playerRegion&&c.name!==cap});var rebel="Kaldarya İsyancıları";kingdomColors[rebel]="#6f5a49";owned.forEach(function(c){settlements[c.name].owner=rebel;settlements[c.name].occupied=true;refreshTerritoryTint(c.name)});refreshWestNeckTint();K.kingArmy.soldiers=0;K.kingAlive=false;if(el("pawn"))el("pawn").style.display="none";K.news.unshift("⚠ "+oldKing+" öldü; varis bulunamadı ve düşük halk/ordu sadakati nedeniyle krallık parçalandı. Başkent dışındaki bölgelerde isyancı yönetimler ortaya çıktı.");say("⚠ KRALLIK PARÇALANDI: Varis yok ve sadakat düşük. Daha önce belirlenen 15 turluk isyancı devlet tanınma süreci başladı.")}
 function handleKingDeath(region,city){var old=markOldKingDead(),heir=livingOfficialHeir(),spawn=controlledSpawnCity();if(heir&&spawn){heir.role="Kral";heir.age=Math.max(16,heir.age||16);formNewKingArmy(heir.name,spawn,"Resmî varis olarak hanedanın devamını sağladı.");return}var loyalty=((K.peopleLoyal||0)+(K.armyLoyal||0))/2;if(!heir&&loyalty<45){fragmentKingdomAfterKingDeath(old);return}if(spawn){var elected={name:"Kral Darven",age:36,role:"Kral",traits:["Ordu ve Halkın Seçimi"],alive:true};dynasty.push(elected);formNewKingArmy(elected.name,spawn,"Varis bulunmadığı için halk ve ordu yeni hükümdarı seçti.");return}K.kingArmy.soldiers=0;K.kingAlive=false;if(el("pawn"))el("pawn").style.display="none";say("☠ "+old+" öldü ve krallığın kontrolünde yeni Kral Ordusu kurulabilecek yerleşim kalmadı.")}
+
+/* V26.7 — Düşman Kral Ordusu yenilgisi / veraset düzeltmesi
+   Kral Ordusu = kralın kendisi. Bir kral ordusu muharebeyi kaybettiğinde kral ölür.
+   Ardından: varis -> yeni kral ordusu; varis yok ama sadakat yeterli -> halk/ordu seçimi;
+   varis yok ve sadakat düşük -> parçalanma. */
+var aiSuccessionState = {};
+function ensureAISuccession(region){
+  if(!aiSuccessionState[region]){
+    var q=kingdomKings[region]||{};
+    var seed=Object.keys(aiSuccessionState).length;
+    aiSuccessionState[region]={
+      kingName: region+" Kralı",
+      kingAlive:true,
+      heirName:(seed%3===0?null:region+" Varisi"),
+      peopleLoyal: 38 + ((seed*11)%35),
+      armyLoyal: 40 + ((seed*13)%33),
+      fragmented:false,
+      history:[]
+    };
+  }
+  return aiSuccessionState[region];
+}
+function aiOwnedCities(region){
+  return DATA.filter(function(c){return settlements[c.name]&&settlements[c.name].owner===region});
+}
+function aiSafeSpawn(region,avoid){
+  var cap=capitals[region], owned=aiOwnedCities(region);
+  if(cap&&cap!==avoid&&settlements[cap]&&settlements[cap].owner===region)return cap;
+  var alt=owned.find(function(c){return c.name!==avoid});
+  return alt?alt.name:(owned[0]?owned[0].name:null);
+}
+function placeAIKing(region,city,soldiers){
+  var q=kingdomKings[region]; if(!q||!city)return false;
+  q.at=city; q.soldiers=soldiers||8; q.supply=72; q.morale=70;
+  q.serviceTurns=0; q.battles=0;
+  var c=K.info[city];
+  if(c&&q.el){q.el.style.display="block";q.el.style.left=c.x+"px";q.el.style.top=c.y+"px"}
+  return true;
+}
+function fragmentAIKingdom(region,deadCity){
+  var st=ensureAISuccession(region), owned=aiOwnedCities(region), cap=capitals[region];
+  st.fragmented=true;
+  var candidates=owned.filter(function(c){return c.name!==cap&&c.name!==deadCity});
+  if(!candidates.length)candidates=owned.filter(function(c){return c.name!==deadCity});
+  var rebelCount=Math.max(1,Math.floor(candidates.length/3));
+  var rebels=candidates.slice(0,rebelCount);
+  rebels.forEach(function(c,i){
+    var rebel=region+" İsyancıları";
+    settlements[c.name].owner=rebel;
+    if(typeof updateTerritoryTint==="function")updateTerritoryTint(c.name);
+  });
+  var q=kingdomKings[region];
+  if(q&&q.el)q.el.style.display="none";
+  if(q)q.soldiers=0;
+  st.history.unshift("Kralın ölümü sonrası krallık parçalandı.");
+  K.news.unshift("⚠ "+region+" kralı savaşta öldü. Varis bulunamadı; halk ve ordu sadakati düşük olduğu için ülke parçalanmaya başladı.");
+  say("⚠ <b>"+region+" parçalanıyor.</b><br>Kral savaşta öldü, geçerli varis yok ve sadakat düşük.");
+}
+
+/* V26.7 — Krallığın kesin yıkılışı + hanedanın akıbeti */
+var destroyedKingdoms = {};
+var dynastyFates = {};
+
+function livingTerritoryCount(region){
+  return DATA.filter(function(c){
+    return settlements[c.name] && settlements[c.name].owner===region;
+  }).length;
+}
+function kingArmyExists(region){
+  var q=kingdomKings[region];
+  return !!(q && q.soldiers>0);
+}
+function resolveDynastyFate(region){
+  if(dynastyFates[region]) return dynastyFates[region];
+  var st=ensureAISuccession(region), fates=[];
+  /* Mevcut hanedan verisi sınırlıysa en az kral/varis kaydı üzerinden akıbet üret.
+     Sonuçlar dünya haberine ve hanedan geçmişine kalıcı olarak yazılır. */
+  var members=[];
+  if(st.kingAlive && st.kingName) members.push(st.kingName);
+  if(st.heirName) members.push(st.heirName);
+  if(!members.length) members.push(region+" Hanedanının hayatta kalan üyeleri");
+
+  members.forEach(function(name,i){
+    var roll=Math.random();
+    var fate;
+    if(roll<0.34) fate="Sürgüne kaçtı";
+    else if(roll<0.67) fate="Krallığın düşüşünde öldürüldü";
+    else fate="Kimliğini terk edip halkın arasına karıştı ve iz bırakmadan kayboldu";
+    fates.push({name:name,fate:fate});
+    st.history.unshift(name+": "+fate+".");
+  });
+  dynastyFates[region]=fates;
+  return fates;
+}
+function destroyKingdom(region){
+  if(destroyedKingdoms[region]) return;
+  destroyedKingdoms[region]=true;
+  var st=ensureAISuccession(region), q=kingdomKings[region];
+  st.kingAlive=false; st.fragmented=false;
+  if(q){q.soldiers=0;if(q.el)q.el.style.display="none";}
+  var fates=resolveDynastyFate(region);
+  K.news.unshift("☠ "+region+" KRALLIĞI YIKILDI — bütün topraklarını ve Kral Ordusunu kaybetti.");
+  fates.forEach(function(x){K.news.unshift("↳ "+x.name+": "+x.fate+".");});
+  say("☠ <b>"+region+" Krallığı yıkıldı.</b><br>Bütün toprakları fethedildi ve Kral Ordusu dağıtıldı.<br>"+
+      fates.map(function(x){return "• "+x.name+": "+x.fate;}).join("<br>"));
+}
+function checkKingdomDestruction(region){
+  if(!region || region==="Kaldarya Merkez" || destroyedKingdoms[region]) return false;
+  if(livingTerritoryCount(region)===0 && !kingArmyExists(region)){
+    destroyKingdom(region); return true;
+  }
+  return false;
+}
+
+function handleAIKingDeath(region,deadCity){
+  var q=kingdomKings[region], st=ensureAISuccession(region);
+  st.kingAlive=false;
+  st.history.unshift((st.kingName||region+" Kralı")+" "+deadCity+" Muharebesi'nde öldü.");
+  if(q){q.soldiers=0;if(q.el)q.el.style.display="none"}
+  /* Toprak kalmadıysa artık varis/seçim/parçalanma yok: krallık kesin yıkılır. */
+  if(livingTerritoryCount(region)===0){
+    destroyKingdom(region);
+    return " ☠ "+region+" kralı öldü. ☠ Bütün topraklar kaybedildiği için krallık yıkıldı.";
+  }
+  var spawn=aiSafeSpawn(region,deadCity);
+  if(st.heirName && spawn){
+    st.kingName=st.heirName; st.kingAlive=true; st.heirName=null;
+    placeAIKing(region,spawn,8);
+    K.news.unshift("♔ "+region+": varis tahta çıktı ve "+spawn+"'da yeni Kral Ordusu kurdu.");
+    say("☠ "+region+" kralı öldü.<br>♔ Varis tahta çıktı ve <b>"+spawn+"</b>'da yeni Kral Ordusu kurdu.");
+    return " ☠ "+region+" kralı öldü. ♔ Varis "+spawn+"'da yeni Kral Ordusu kurdu.";
+  }
+  var loyalty=((st.peopleLoyal||0)+(st.armyLoyal||0))/2;
+  if(loyalty>=45 && spawn){
+    var elected=region+" Seçilmiş Kralı";
+    st.kingName=elected; st.kingAlive=true;
+    placeAIKing(region,spawn,7);
+    K.news.unshift("♔ "+region+": halk ve ordu yeni kral seçti; Kral Ordusu "+spawn+"'da yeniden kuruldu.");
+    say("☠ "+region+" kralı öldü.<br>♔ Halk ve ordu yeni kral seçti; yeni Kral Ordusu <b>"+spawn+"</b>'da kuruldu.");
+    return " ☠ "+region+" kralı öldü. ♔ Halk ve ordu yeni kral seçti.";
+  }
+  fragmentAIKingdom(region,deadCity);
+  return " ☠ "+region+" kralı öldü. ⚠ Varis ve yeterli sadakat olmadığı için ülke parçalanmaya başladı.";
+}
+
 function resolveBattle(region){
   var e=kingdomKings[region],p=playerArmy(),isGeneral=generals.indexOf(p)>=0,gIndex=generals.indexOf(p);
   var city=isGeneral?p.at:K.at,a=battleAssessment(p,e,city),r=a.ratio;
@@ -521,11 +666,11 @@ function resolveBattle(region){
       if(roll<danger*.42){p.dead=true;p.onDuty=false;if(p.el)p.el.style.display="none";commanderEvent=" ☠ "+p.name+" savaşta öldü."}
       else if(roll<danger){addGeneralPrisoner(p,region,city);commanderEvent=" ⛓ "+p.name+" düşmana esir düştü."}
     }
-  }else if(win&&e.soldiers>0){
-    var erc=friendlyRetreatCity(region,e.at),erisk=(decisive?.28:.12)+((e.morale||0)<35?.12:0)+(erc?0:.18);
-    var eloss=Math.min(e.soldiers,Math.round(e.soldiers*erisk));e.soldiers-=eloss;lossE+=eloss;
-    if(erc&&e.soldiers>0){e.at=erc;var ce=K.info[erc];e.el.style.left=ce.x+"px";e.el.style.top=ce.y+"px";retreat=region+" ordusu "+erc+" yönüne çekildi; geri çekilmede "+eloss+" ek kayıp verdi."}
-    else{e.soldiers=0;e.morale=0;retreat=region+" ordusu dağıldı."}
+  }else if(win){
+    /* Düşman tarafındaki birlik kingdomKings[region] olduğundan bu doğrudan Kral Ordusu'dur.
+       Yenilgi kralın ölümünü tetikler; normal geri çekilme uygulanmaz. */
+    var enemyKingResult=handleAIKingDeath(region,city);
+    retreat=enemyKingResult;
   }
   lossP+=extraLoss;
   if(!win&&!isGeneral){commanderEvent+=" ☠ "+(K.kingName||"Kral")+" Kral Ordusu'nun başında öldü.";handleKingDeath(region,city);}
@@ -549,6 +694,9 @@ if(ka){
 generals.forEach(function(g){if(g.onDuty){g.serviceTurns++;var upkeep=armyUpkeep(g.soldiers);if(K.gold>=upkeep){K.gold-=upkeep;g.supply=Math.min(100,(g.supply||60)+3);g.morale=Math.min(100,(g.morale||70)+1)}else{g.supply=Math.max(0,(g.supply||60)-10);g.morale=Math.max(0,(g.morale||70)-6)}}});if(K.warFatigue>0){K.peopleHappy=Math.max(0,K.peopleHappy-Math.ceil(K.warFatigue/40));K.gold=Math.max(0,K.gold-Math.floor(K.warFatigue/35));K.warFatigue=Math.max(0,K.warFatigue-1)}var income=landIncome;processBuilds();if(K.tax>=75){K.peopleHappy=Math.max(0,K.peopleHappy-2);K.peopleLoyal=Math.max(0,K.peopleLoyal-1)}if(K.military===0)K.armyLoyal=Math.max(0,K.armyLoyal-2);sync();clearGlow();say('Tur '+K.turn+' başladı • 4 ay geçti • Krallık eylem puanı: 3/3 • Kontrol edilen yerleşim geliri +'+income+' altın.');setTimeout(dynamicEvent,350)}
 function sync(){el('turn').textContent=K.turn;el('gold').textContent=K.gold;el('food').textContent=K.food;if(el('cal'))el('cal').textContent='Yıl '+K.year+' • Ay '+K.month}
 var Z=1;function applyZoom(){el('stage').style.transform='scale('+Z+')'}function zoomIn(){Z=Math.min(2.4,Z+.15);applyZoom()}function zoomOut(){Z=Math.max(.5,Z-.15);applyZoom()}
-function boot(){var a=pts();for(var i=0;i<a.length;i++)a[i].onclick=function(){tap(this.getAttribute("data-city"))};el("pawn").onclick=pawnTap;createKings();createGeneralPawns();refreshAllTerritoryTints();sync();say("V26.5 ✓ Kaldarya Batı–Merkez dar sınır maskesi düzeltildi. Kral daima Kral Ordusu başındadır; Kral Ordusu yenilirse kral ölür ve varis/seçim/parçalanma sistemi devreye girer. •  Her krallık için tur başına 3 ortak eylem puanı; kral/general hareketi ve bina başlatma 1 EP. Mesafeye dayalı otomatik bağlantı kaldırıldı; yalnız sabit yol/geçit ağı kullanılır. Kumkapı, Kızılkum ile Karahisar arasına Zafran geçit şehri olarak eklendi ve Solar↔Kumkapı ana kara kapısıdır. Stratejik geçit savunucuları ek arazi avantajı alır; Onyar↔Yaprak Ormanı kapalıdır. Fethedilen yerleşimler yeni sahibin siyasi rengiyle işaretlenir. Yönetim Merkezi Hapishane, hanedan/vali esirleri, fidye-serbest bırakma-öldürme ve general ölüm/esir riski etkin.")}
+function boot(){var a=pts();for(var i=0;i<a.length;i++)a[i].onclick=function(){tap(this.getAttribute("data-city"))};el("pawn").onclick=pawnTap;createKings();createGeneralPawns();refreshAllTerritoryTints();sync();say("V26.7 ✓ Kaldarya Batı–Merkez dar sınır maskesi düzeltildi. Kral daima Kral Ordusu başındadır; Kral Ordusu yenilirse kral ölür ve varis/seçim/parçalanma sistemi devreye girer. •  Her krallık için tur başına 3 ortak eylem puanı; kral/general hareketi ve bina başlatma 1 EP. Mesafeye dayalı otomatik bağlantı kaldırıldı; yalnız sabit yol/geçit ağı kullanılır. Kumkapı, Kızılkum ile Karahisar arasına Zafran geçit şehri olarak eklendi ve Solar↔Kumkapı ana kara kapısıdır. Stratejik geçit savunucuları ek arazi avantajı alır; Onyar↔Yaprak Ormanı kapalıdır. Fethedilen yerleşimler yeni sahibin siyasi rengiyle işaretlenir. Yönetim Merkezi Hapishane, hanedan/vali esirleri, fidye-serbest bırakma-öldürme ve general ölüm/esir riski etkin.")}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,false);else boot();
 </script></body></html>
+<!-- V26.7: enemy king army defeat now triggers death + succession/election/fragmentation. -->
+
+<!-- V26.7: 0 territory + no King Army => kingdom destroyed; surviving dynasty fate resolved as exile/death/disappearance. -->
