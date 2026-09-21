@@ -559,7 +559,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .hireCard{border:1px solid #6f6040;border-radius:8px;padding:7px;background:#172238}
 </style>
 <script>
-/* ===== KALDARYA V28.2 — tek ve temiz oyun çekirdeği ===== */
+/* ===== KALDARYA V28.3 — tek ve temiz oyun çekirdeği ===== */
 var V28_DESTROYED={};
 var V28_AI={};
 var V28_MARKET=[];
@@ -793,7 +793,7 @@ setTimeout(function(){
 
 
 <script>
-/* V28.2 — Kral Orduları ve genel çekirdek hata düzeltmesi */
+/* V28.3 — Kral Orduları ve genel çekirdek hata düzeltmesi */
 var V281_REL={};
 function v281EnsureKingArmies(){
  Object.keys(capitals).forEach(function(region){
@@ -850,7 +850,47 @@ v28AITurn=function(region){
  for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(region,units[j]);
  if(st.ap>0)v281Diplomacy(region);
 };
-setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V28.2 init",e)}},350);
+setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V28.3 init",e)}},350);
 </script>
 
+<script>
+function v283Regions(){var x={},a=[];DATA.forEach(function(c){if(c.region&&!x[c.region]&&!/İsyancıları$/.test(c.region)){x[c.region]=1;a.push(c.region)}});return a}
+function v283Owned(r){return DATA.filter(function(c){return ownerOf(c.name)===r})}
+function v283Capital(r){var c=capitals[r];if(c&&K.info[c]&&ownerOf(c)===r)return c;var a=v283Owned(r);return a.length?a[0].name:null}
+function v283EnsureKing(r){
+ if(r===K.playerRegion||V28_DESTROYED[r])return null;var city=v283Capital(r);if(!city)return null;var q=kingdomKings[r];
+ if(!q){var b=document.createElement("button");b.className="kingPawn";b.id=("king_"+r).replace(/\s/g,"_");b.textContent="♚";b.onclick=function(e){e.stopPropagation();showKing(r)};el("stage").appendChild(b);
+ q=kingdomKings[r]={region:r,name:r+" Kral Ordusu",army:r+" Kral Ordusu",role:"king",kingInArmy:true,at:city,soldiers:12,alive:true,supply:80,morale:80,battles:0,traits:["Disiplinli"],el:b}}
+ if(q.alive!==false&&q.soldiers>0){q.el.style.display="block";q.el.title=r+" • Kral Ordusu • "+q.soldiers+" asker";v28MoveVisual(q)}return q
+}
+function v283EnsureAllKings(){v283Regions().forEach(v283EnsureKing)}
+function v283Candidates(){if(!K.v283Market){K.v283Market=["Aras","Boran","Taren","Demir"].map(function(n,i){var e=2+i,s=1+(i%3);return{id:"v283_"+i,name:n,exp:e,skill:s,price:10+e*4+s*3,trait:["Disiplinli","İkmalci","Saldırgan","Savunmacı"][i]}})}return K.v283Market}
+function v283HireGeneral(id){
+ var c=v283Candidates().find(function(x){return x.id===id});if(!c)return msg("Aday bulunamadı.");
+ if(K.gold<c.price)return msg("Yeterli altın yok.");if(K.actionPoints<=0)return msg("Eylem puanın kalmadı.");
+ var at=K.at,ci=K.info[at];if(!ci)return msg("Başlangıç şehri bulunamadı.");
+ K.gold-=c.price;K.actionPoints--;var g={name:c.name,army:c.name+" Ordusu",role:"general",soldiers:8,at:at,onDuty:true,dead:false,captured:false,exp:c.exp,skill:c.skill,trait:c.trait,supply:80,morale:75,battles:0};
+ generals.push(g);var b=document.createElement("button");b.className="generalPawn";b.textContent="⚔";b.title=c.name+" • 8 asker";el("stage").appendChild(b);g.el=b;v28MoveVisual(g);
+ K.v283Market=K.v283Market.filter(function(x){return x.id!==id});if(typeof refreshTop==="function")refreshTop();msg(c.name+" işe alındı • 8 askerlik General Ordusu kuruldu.")
+}
+function v283HireHTML(){return '<div class="card"><h3>⚔ General İşe Al</h3>'+v283Candidates().map(function(c){return '<div class="card"><b>'+c.name+'</b> • '+c.price+' altın<br><span class="small">Tecrübe '+c.exp+' • Yetenek '+c.skill+' • '+c.trait+'</span><br><button onclick="v283HireGeneral(\''+c.id+'\')">İşe Al</button></div>'}).join("")+'</div>'}
+var v283Family=familyHTML;familyHTML=function(){return v283Family()+'<hr>'+v283HireHTML()};
+
+function v283AIHire(r){var st=v28State(r),live=st.generals.filter(function(g){return g.alive&&!g.captured});if(live.length>=2||st.ap<=0)return false;
+ var e=1+Math.floor(Math.random()*5),sk=1+Math.floor(Math.random()*5),price=10+e*4+sk*3,city=v283Capital(r);if(st.gold<price||!city)return false;st.gold-=price;st.ap--;
+ var g={name:r+" Generali "+(st.generals.length+1),army:r+" General Ordusu",role:"general",soldiers:8,at:city,alive:true,captured:false,exp:e,skill:sk,trait:"Disiplinli",supply:80,morale:75,battles:0};
+ var b=document.createElement("button");b.className="aiGeneralPawn";b.textContent="⚔";b.title=g.name+" • 8 asker";el("stage").appendChild(b);g.el=b;st.generals.push(g);v28MoveVisual(g);K.news.unshift("⚔ "+r+" yeni general işe aldı.");return true}
+v28AIHire=v283AIHire;
+function v283Score(r,u,n){var z=0,o=ownerOf(n),c=K.info[n];if(o===r)z+=2;if(o!==r&&atWar(r,o))z+=25;if(typeof PASS_CITIES!=="undefined"&&PASS_CITIES[n])z+=8;if(c&&/Büyük|Başkent|Kale/i.test(c.type||""))z+=7;
+ var k=kingdomKings[o];if(k&&k.at===n&&k.soldiers>0)z+=12;if((u.supply||70)<35&&o===r)z+=20;return z}
+v28ChooseMove=function(r,u){var a=v28Neighbors(u.at).filter(function(n){return v28CanEnter(r,n)});a.sort(function(x,y){return v283Score(r,u,y)-v283Score(r,u,x)});return a[0]||null};
+v28AITurn=function(r){if(!v28Alive(r))return;var st=v28State(r),own=v283Owned(r);if(!own.length)return v28CheckDestroy(r);v283EnsureKing(r);st.turns++;st.ap=3;st.gold+=own.length;
+ var q=kingdomKings[r],units=[];if(q&&q.alive!==false&&q.soldiers>0)units.push(q);st.generals.forEach(function(g){if(g.alive&&!g.captured&&g.soldiers>0)units.push(g)});
+ units.forEach(function(u){var up=armyUpkeep(u.soldiers);if(st.gold>=up){st.gold-=up;u.supply=Math.min(100,(u.supply||70)+3)}else{u.supply=Math.max(0,(u.supply||70)-10);u.morale=Math.max(0,(u.morale||70)-7)}});
+ while(st.ap>0&&st.generals.filter(function(g){return g.alive&&!g.captured}).length<2){if(!v283AIHire(r))break}
+ for(var i=0;i<units.length&&st.ap>0;i++)if(units[i].soldiers<10&&st.gold>=8)v28Recruit(r,units[i]);
+ units=[];q=kingdomKings[r];if(q&&q.alive!==false&&q.soldiers>0)units.push(q);st.generals.forEach(function(g){if(g.alive&&!g.captured&&g.soldiers>0)units.push(g)});
+ for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(r,units[j]);if(st.ap>0&&typeof v281Diplomacy==="function")v281Diplomacy(r)};
+setTimeout(function(){v283EnsureAllKings();v28InitAIArmies();v283EnsureAllKings()},700);
+</script>
 </body></html>
