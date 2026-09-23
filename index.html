@@ -568,7 +568,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .hireCard{border:1px solid #6f6040;border-radius:8px;padding:7px;background:#172238}
 </style>
 <script>
-/* ===== KALDARYA V32.1 — tek ve temiz oyun çekirdeği ===== */
+/* ===== KALDARYA V34.0 — tek ve temiz oyun çekirdeği ===== */
 var V28_DESTROYED={};
 var V28_AI={};
 var V28_MARKET=[];
@@ -801,7 +801,7 @@ setTimeout(function(){
 
 
 <script>
-/* V32.1 — Kral Orduları ve genel çekirdek hata düzeltmesi */
+/* V34.0 — Kral Orduları ve genel çekirdek hata düzeltmesi */
 var V281_REL={};
 function v281EnsureKingArmies(){
  Object.keys(capitals).forEach(function(region){
@@ -858,7 +858,7 @@ v28AITurn=function(region){
  for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(region,units[j]);
  if(st.ap>0)v281Diplomacy(region);
 };
-setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V32.1 init",e)}},350);
+setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V34.0 init",e)}},350);
 </script>
 
 <script>
@@ -882,7 +882,7 @@ function v283HireGeneral(id){
  K.v283Market=K.v283Market.filter(function(x){return x.id!==id});if(typeof refreshTop==="function")refreshTop();say(c.name+" işe alındı • 8 askerlik General Ordusu kuruldu.")
 }
 function v283HireHTML(){return '<div class="card"><h3>⚔ General İşe Al</h3>'+v283Candidates().map(function(c){return '<div class="card"><b>'+c.name+'</b> • '+c.price+' altın<br><span class="small">Tecrübe '+c.exp+' • Yetenek '+c.skill+' • '+c.trait+'</span><br><button onclick="v283HireGeneral(\''+c.id+'\')">İşe Al</button></div>'}).join("")+'</div>'}
-/* V32.1: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
+/* V34.0: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
 
 function v283AIHire(r){var st=v28State(r),live=st.generals.filter(function(g){return g.alive&&!g.captured});if(live.length>=2||st.ap<=0)return false;
  var e=1+Math.floor(Math.random()*5),sk=1+Math.floor(Math.random()*5),price=10+e*4+sk*3,city=v283Capital(r);if(st.gold<price||!city)return false;st.gold-=price;st.ap--;
@@ -916,7 +916,7 @@ openCapital=function(tab){
  var body='<div class="row"><h2 style="flex:1">👑 Kaldarya Yönetim Merkezi</h2><button onclick="closePanel()">✕</button></div><div class="row tabs"><button onclick="openCapital(\'family\')">Aile Ağacı</button><button onclick="openDiplomacy()">Diplomasi</button><button onclick="openCapital(\'tax\')">Vergi Sistemi</button><button onclick="openPrison()">⛓ Hapishane</button></div>';
  body+=familyHTML()+v284ArmyAuditHTML();panel(body);
 };
-setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V32.1 king audit",e)}},1000);
+setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V34.0 king audit",e)}},1000);
 </script>
 
 
@@ -966,7 +966,7 @@ v28AITurn=function(r){if(!v28Alive(r))return;var st=v28State(r),own=v283Owned(r)
 </script>
 
 <script>
-/* ===== V32.1 — KÜLTÜREL, HAFIZALI, UYARLANAN STRATEJİK AI =====
+/* ===== V34.0 — KÜLTÜREL, HAFIZALI, UYARLANAN STRATEJİK AI =====
    Amaç: aynı hamleyi döndürmek yerine devlet karakteri + mevcut durum + geçmiş sonuçlar
    üzerinden her tur yeniden değerlendirme yapmak. */
 var V29_BRAIN={};
@@ -1122,7 +1122,7 @@ v28AITurn=function(r){
 </script>
 
 <script>
-/* ===== V32.1 — DERİN DİPLOMASİ ===== */
+/* ===== V34.0 — DERİN DİPLOMASİ ===== */
 var V30_DIP={};
 function v30Key(a,b){return [a,b].sort().join("||")}
 function v30D(a,b){
@@ -1282,7 +1282,7 @@ endTurn=function(){var z=v30OldEndTurn.apply(this,arguments);v30TurnRelations();
 setTimeout(v30Init,900);
 </script>
 <script>
-/* ===== V32.1 — ORDU vs ORDU SAHRA SAVAŞLARI ===== */
+/* ===== V34.0 — ORDU vs ORDU SAHRA SAVAŞLARI ===== */
 function v31Name(u,r){return (u&&u.name)||(u&&u.army)||(r+" Ordusu")}
 function v31AllUnits(r){
  var a=[],q=kingdomKings[r];
@@ -1357,7 +1357,7 @@ function v31PlayerAttack(u,to){
 }
 </script>
 <script>
-/* V32.1 — Bir şehirde savunma ordusu varsa şehir savaşsız ASLA fethedilemez. */
+/* V34.0 — Bir şehirde savunma ordusu varsa şehir savaşsız ASLA fethedilemez. */
 function v311UnitCity(u,r){
  if(!u)return null;
  /* Oyuncu Kral Ordusu eski sürümlerde at alanı taşımayabiliyor; gerçek konumu K.at. */
@@ -1390,7 +1390,7 @@ setOwner=function(city,newOwner,by,force){
  if(!force && old && newOwner!==old && atWar(newOwner,old)){
    var defenders=v311Defenders(old,city);
    if(defenders.length){
-     console.warn("V32.1: savunma ordusu varken fetih engellendi",city,old,newOwner);
+     console.warn("V34.0: savunma ordusu varken fetih engellendi",city,old,newOwner);
      return false;
    }
  }
@@ -1457,7 +1457,7 @@ v28MoveUnit=function(r,u){
 };
 </script>
 <script>
-/* ===== V32.1 — TEK KAYNAKLI GERÇEK ORDU SAVUNMASI ===== */
+/* ===== V34.0 — TEK KAYNAKLI GERÇEK ORDU SAVUNMASI ===== */
 function v312CityOf(u,r){
  if(!u)return null;
  if(r===K.playerRegion && (u===K.kingArmy || u.role==="king")) return K.at;
@@ -1572,7 +1572,7 @@ function v312DefenseText(city){
 }
 </script>
 <script>
-/* ===== V32.1 — ASKERÎ GEÇİŞ ≠ FETİH =====
+/* ===== V34.0 — ASKERÎ GEÇİŞ ≠ FETİH =====
    Dost/yabancı toprağa askerî geçiş anlaşmasıyla girilebilir,
    fakat savaş yoksa sahiplik ASLA değişmez. */
 function v313CanOccupy(attacker,owner){
@@ -1592,7 +1592,7 @@ setOwner=function(city,newOwner,by,force){
 
  /* Sadece açık savaş, isyan/özel devlet olayları veya açık sistem force'u sahiplik değiştirebilir. */
  if(force!=="STATE_EVENT" && !atWar(newOwner,old)){
-   console.warn("V32.1: barış/askerî geçiş sırasında fetih engellendi",city,newOwner,old);
+   console.warn("V34.0: barış/askerî geçiş sırasında fetih engellendi",city,newOwner,old);
    return false;
  }
  /* Savaşta bile savunma ordusu varsa savaş çözülmeden sahiplik değişmez. */
@@ -1643,7 +1643,7 @@ v29MoveScore=function(r,u,n,target){
 };
 </script>
 <script>
-/* ===== V32.1 — KURNAZ / FIRSATÇI / UZUN VADELİ AI ===== */
+/* ===== V34.0 — KURNAZ / FIRSATÇI / UZUN VADELİ AI ===== */
 var V32_PLAN={};
 function v32P(r){return V32_PLAN[r]||(V32_PLAN[r]={target:null,patience:0,retreat:0,feint:null,lastCities:{},reserve:null})}
 function v32BorderCities(r){
@@ -1728,10 +1728,10 @@ v28AITurn=function(r){
  /* Gereksiz aynı diplomasi hamlesini azalt, savaş sonrası hafızayı güçlendir. */
  if(p.target&&atWar(r,p.target))v29Remember(r,"campaign:"+p.target,true);
 };
-/* AI barışta askerî geçiş topraklarını sadece koridor olarak kullanır; V32.1 fetih kilidi korunur. */
+/* AI barışta askerî geçiş topraklarını sadece koridor olarak kullanır; V34.0 fetih kilidi korunur. */
 </script>
 <script>
-/* ===== V32.1 — BARIŞTA FETİH İÇİN KESİN MERKEZÎ KİLİT =====
+/* ===== V34.0 — BARIŞTA FETİH İÇİN KESİN MERKEZÎ KİLİT =====
    Eski sürümlerden kalan raw setOwner referansları da bu kapıdan geçmek zorunda. */
 var V321_TRUE_SET_OWNER = (function(){
   /* İlk gerçek sahiplik fonksiyonunun davranışını doğrudan burada uygularız;
@@ -1759,7 +1759,7 @@ function v321OwnershipGate(city,newOwner,by,force){
  if(force==="STATE_EVENT")return V321_TRUE_SET_OWNER(city,newOwner,by);
 
  if(!atWar(newOwner,old)){
-   console.warn("V32.1 BLOKE: savaş yokken fetih denemesi",newOwner,old,city,by);
+   console.warn("V34.0 BLOKE: savaş yokken fetih denemesi",newOwner,old,city,by);
    return false;
  }
 
@@ -1826,5 +1826,485 @@ function v321KaldaryaAccessIntegrity(){
 var v321EndTurn=endTurn;
 endTurn=function(){v321KaldaryaAccessIntegrity();var z=v321EndTurn.apply(this,arguments);v321KaldaryaAccessIntegrity();return z};
 setTimeout(v321KaldaryaAccessIntegrity,1000);
+</script>
+<script>
+/* ===== V34.0 — SAVAŞ MERKEZİ + ZORUNLU SAVAŞ/FETİH UYARILARI ===== */
+var V33_EVENTS=[];
+var V33_PENDING_ATTACK=null;
+function v33Event(type,title,text,a,b){
+ var e={turn:K.turn,year:K.year,month:K.month,type:type,title:title,text:text,a:a||"",b:b||""};
+ V33_EVENTS.unshift(e);if(V33_EVENTS.length>80)V33_EVENTS.pop();
+ K.news.unshift((type==="war"?"⚔ ":type==="peace"?"🕊 ":type==="tension"?"⚠ ":"📜 ")+title+": "+text);
+}
+function v33TypeName(t){return {war:"SAVAŞ",peace:"BARIŞ",tension:"GERGİNLİK",treaty:"ANLAŞMA",battle:"MUHAREBE",warning:"UYARI"}[t]||t.toUpperCase()}
+function v33WarsHTML(){
+ var active=[],rs=v283Regions();
+ for(var i=0;i<rs.length;i++)for(var j=i+1;j<rs.length;j++)if(atWar(rs[i],rs[j]))active.push(rs[i]+" ⚔ "+rs[j]);
+ var h='<div class="row"><h2 style="flex:1">📜 Savaşlar ve Diplomatik Olaylar</h2><button onclick="closePanel()">✕</button></div>';
+ h+='<div class="card"><b>⚔ Devam Eden Savaşlar</b><div class="small">'+(active.length?active.join("<br>"):"Şu anda devam eden savaş yok.")+'</div></div>';
+ h+='<div class="card"><b>🌍 Dünya Olayları</b>';
+ if(!V33_EVENTS.length)h+='<div class="small">Henüz kayıtlı diplomatik olay yok.</div>';
+ V33_EVENTS.forEach(function(e){h+='<div style="padding:8px 0;border-bottom:1px solid #42516b"><b>['+v33TypeName(e.type)+'] '+e.title+'</b><div class="small">Yıl '+e.year+' • Ay '+e.month+' • '+e.text+'</div></div>'});
+ h+='</div>';return h
+}
+function openWars(){panel(v33WarsHTML())}
+/* Eski Savaşlar düğmesinin hangi fonksiyonu çağırdığına bakılmaksızın yakalanabilsin. */
+if(typeof showWars==="function")showWars=openWars;
+if(typeof warsPanel==="function")warsPanel=openWars;
+document.addEventListener("click",function(ev){
+ var b=ev.target.closest&&ev.target.closest("button");if(b&&b.textContent.trim().indexOf("Savaşlar")>=0){ev.preventDefault();ev.stopImmediatePropagation();openWars()}
+},true);
+
+/* Bütün savaş ilanları burada kayda girer. Sessiz savaş yok. */
+var v33SetWar=setWar;
+setWar=function(a,b,on){
+ var was=atWar(a,b);
+ var z=v33SetWar.apply(this,arguments);
+ var now=atWar(a,b);
+ if(on&&!was&&now){
+   v33Event("war","Savaş İlanı",a+" → "+b+" krallığına savaş ilan etti.",a,b);
+   if(a===K.playerRegion||b===K.playerRegion){
+     var enemy=a===K.playerRegion?b:a;
+     say("⚔ SAVAŞ İLANI! "+enemy+" ile savaş başladı. Düşman artık topraklarını fethetmeye çalışabilir.");
+   }
+ }else if(!on&&was&&!now){
+   v33Event("peace","Barış",a+" ile "+b+" arasındaki savaş sona erdi.",a,b);
+   if(a===K.playerRegion||b===K.playerRegion)say("🕊 "+a+" ile "+b+" arasında barış sağlandı.");
+ }
+ return z
+};
+
+/* Anlaşma, fesih, hediye, teklif reddi gibi diplomatik gelişmeleri savaş merkezine kaydet. */
+var v33Treaty=v30Treaty;
+v30Treaty=function(a,b,type,on){
+ var z=v33Treaty.apply(this,arguments);
+ v33Event("treaty",on?"Anlaşma İmzalandı":"Anlaşma Feshedildi",a+" ↔ "+b+" • "+v30Label(type),a,b);return z
+};
+var v33Mem=v30Mem;
+v30Mem=function(a,b,text,rel,trust,griev){
+ var z=v33Mem.apply(this,arguments);
+ if(/gerilim|redded|kırgın|tehdit/i.test(text))v33Event("tension","Diplomatik Gerilim",a+" / "+b+" • "+text,a,b);
+ return z
+};
+
+/* Oyuncu toprağına fetih girişimi başlamadan ÖNCE zorunlu uyarı.
+   İlk saldırı o tur durur; oyuncu uyarıyı gördükten sonra sonraki hamlede savaş gerçekleşebilir. */
+function v33WarnPlayerAttack(attacker,city,u){
+ var key=attacker+"|"+city+"|"+K.turn;
+ if(V33_PENDING_ATTACK===key)return false;
+ V33_PENDING_ATTACK=key;
+ v33Event("warning","Fetih Tehdidi",attacker+" ordusu "+city+" üzerine ilerliyor. Saldırı henüz çözülmedi.",attacker,K.playerRegion);
+ say("🚨 FETİH UYARISI! "+attacker+" ordusu "+city+" üzerine saldırıya hazırlanıyor. Savaşlar bölümünü kontrol et.");
+ return true;
+}
+
+/* V34.0 güvenlik kapısını koru, fakat oyuncu toprağına savaşsız fetih denemelerini de görünür kayda al. */
+var v33OwnerGate=setOwner;
+setOwner=function(city,newOwner,by,force){
+ var old=ownerOf(city);
+ if(old===K.playerRegion&&newOwner!==old&&!atWar(newOwner,old)){
+   v33Event("warning","Engellenen Yasa Dışı Fetih",newOwner+" ordusunun "+city+" üzerindeki savaşsız fetih girişimi engellendi.",newOwner,old);
+   return false;
+ }
+ return v33OwnerGate.apply(this,arguments)
+};
+
+/* AI hareketi: oyuncu toprağına gerçek saldırıdan önce bir uyarı hamlesi tüketir. */
+var v33Move=v28MoveUnit;
+v28MoveUnit=function(r,u){
+ var to=v28ChooseMove(r,u);
+ if(to&&ownerOf(to)===K.playerRegion&&r!==K.playerRegion&&atWar(r,K.playerRegion)){
+   if(v33WarnPlayerAttack(r,to,u)){var st=v28State(r);if(st&&st.ap>0)st.ap--;return true}
+ }
+ var before=to?ownerOf(to):null,z=v33Move.apply(this,arguments);
+ if(to&&before&&before!==r&&atWar(r,before)){
+   v33Event("battle","Cephe Hareketi",r+" ordusu "+to+" cephesinde harekât yürüttü.",r,before);
+ }
+ return z
+};
+
+/* Dinamik olaylar artık yalnız toast değil, Savaşlar kaydına da gider. */
+var v33Say=say;
+say=function(t){
+ if(typeof t==="string"&&/diplomatik.*gerilim|gerilim.*diplomatik/i.test(t))v33Event("tension","Diplomatik Gerilim",t);
+ return v33Say.apply(this,arguments)
+};
+</script>
+<script>
+/* ===== V34.0 — RESMÎ SAVAŞ KAYDI: GEÇİŞ ASLA FETİH DEĞİLDİR ===== */
+var V331_WAR_AUTH={};
+function v331Key(a,b){return [a,b].sort().join("||")}
+function v331Authorized(a,b){var w=V331_WAR_AUTH[v331Key(a,b)];return !!(w&&w.active)}
+function v331CanAttackNow(a,b){
+ var w=V331_WAR_AUTH[v331Key(a,b)];
+ if(!w||!w.active)return false;
+ /* Oyuncuya savaş ilan edildiği tur saldırı/fetih yok: en az sonraki tur. */
+ if((a===K.playerRegion||b===K.playerRegion)&&K.turn<=w.declaredTurn)return false;
+ return true;
+}
+
+/* setWar tek resmî savaş kapısıdır. wars nesnesinde eski/yanlış değer olsa bile yetki vermez. */
+var v331PreviousSetWar=setWar;
+setWar=function(a,b,on){
+ var key=v331Key(a,b),was=v331Authorized(a,b);
+ if(on){
+   V331_WAR_AUTH[key]={active:true,declaredTurn:K.turn,declaredYear:K.year,declaredMonth:K.month,attacker:a,defender:b};
+   wars[a+"|"+b]=true;wars[b+"|"+a]=true;
+   if(!was){
+     v33Event("war","RESMÎ SAVAŞ İLANI",a+" → "+b+". Fetih hakkı yalnız bu savaş kaydıyla açıldı.",a,b);
+     if(a===K.playerRegion||b===K.playerRegion){
+       var enemy=a===K.playerRegion?b:a;
+       say("🚨 RESMÎ SAVAŞ İLANI: "+enemy+". Bu tur fetih yapılamaz; saldırı en erken sonraki tur başlayabilir.");
+     }
+   }
+ }else{
+   V331_WAR_AUTH[key]={active:false,endedTurn:K.turn};
+   wars[a+"|"+b]=false;wars[b+"|"+a]=false;
+   if(was){v33Event("peace","RESMÎ BARIŞ",a+" ↔ "+b+" savaşı sona erdi.",a,b);if(a===K.playerRegion||b===K.playerRegion)say("🕊 BARIŞ: "+a+" ile "+b+" arasındaki fetih yetkisi kapandı.")}
+ }
+ return true;
+};
+/* Oyun mantığında savaş demek artık yalnızca resmî kayıttır. */
+atWar=function(a,b){return v331Authorized(a,b)};
+
+/* İlk başlangıçta hiç kimse oyuncuyla savaşta değildir. Askerî geçişler aynen korunur. */
+v283Regions().forEach(function(r){
+ if(r!==K.playerRegion){wars[r+"|"+K.playerRegion]=false;wars[K.playerRegion+"|"+r]=false}
+});
+
+/* SAHİPLİK için son ve değiştirilemez kapı.
+   STATE_EVENT dışında barışta tek piksel/toprak bile el değiştiremez. */
+var v331TrueOwnerWrite=V321_TRUE_SET_OWNER;
+setOwner=function(city,newOwner,by,force){
+ var old=ownerOf(city);
+ if(!old||old===newOwner)return false;
+ if(force==="STATE_EVENT")return v331TrueOwnerWrite(city,newOwner,by);
+ if(!v331CanAttackNow(newOwner,old)){
+   if(old===K.playerRegion||newOwner===K.playerRegion)
+     v33Event("warning","Fetih Engellendi",newOwner+" → "+city+": resmî ve saldırıya açılmış savaş bulunmadığı için sahiplik değişmedi.",newOwner,old);
+   return false;
+ }
+ var defs=v312Defenders(old,city);
+ if(defs.length&&force!=="BATTLE_WON")return false;
+ return v331TrueOwnerWrite(city,newOwner,by);
+};
+v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
+
+/* Savaş motoru da resmî savaş + bir tur uyarı süresini atlayamaz. */
+var v331Battle=v312Battle;
+v312Battle=function(ar,attackers,dr,city){
+ if(!v331CanAttackNow(ar,dr)){
+   if(ar!==K.playerRegion&&dr===K.playerRegion)
+     say("🛡 "+ar+" ordusu "+city+" yakınında; fakat resmî savaş/fetih süresi açılmadığı için saldırı gerçekleşmedi.");
+   return false;
+ }
+ return v331Battle(ar,attackers,dr,city);
+};
+v31Battle=function(ar,attackers,dr,defenders,city){return v312Battle(ar,attackers,dr,city)};
+
+/* HAREKET: barış/askerî geçişte sadece konum değişir. Fetih koduna girmez. */
+v28MoveUnit=function(r,u){
+ var st=v28State(r);if(!u||st.ap<=0)return false;
+ var to=v28ChooseMove(r,u);if(!to||to===u.at)return false;
+ var old=ownerOf(to),from=v312CityOf(u,r)||u.at;
+ if(old&&old!==r){
+   if(!v313CanTransit(r,old))return false;
+
+   /* BARIŞ / ASKERÎ GEÇİŞ */
+   if(!v331Authorized(r,old)){
+     u.at=to;u.supply=Math.max(0,(u.supply||70)-2);v28MoveVisual(u);st.ap--;
+     return true;
+   }
+
+   /* Savaş ilanının ilk turu: sınırda bekle, fetih yok. */
+   if(!v331CanAttackNow(r,old)){
+     if(old===K.playerRegion)v33WarnPlayerAttack(r,to,u);
+     st.ap--;return true;
+   }
+
+   var defs=v312Defenders(old,to);st.ap--;
+   if(defs.length){
+     var won=v312Battle(r,[u],old,to);
+     if(won){u.at=to;u.supply=Math.max(0,(u.supply||70)-3);v28MoveVisual(u)}
+     else{u.at=from;v28MoveVisual(u)}
+     return true;
+   }
+   u.at=to;u.supply=Math.max(0,(u.supply||70)-3);v28MoveVisual(u);
+   setOwner(to,r,v31Name(u,r),"BATTLE_WON");v28CheckDestroy(old);return true;
+ }
+ u.at=to;u.supply=Math.max(0,(u.supply||70)-2);v28MoveVisual(u);st.ap--;return true;
+};
+
+/* Savaşlar ekranında resmî savaş kayıtlarını göster. */
+var v331WarsHTML=v33WarsHTML;
+v33WarsHTML=function(){
+ var base=v331WarsHTML();
+ var rows=Object.keys(V331_WAR_AUTH).filter(function(k){return V331_WAR_AUTH[k].active}).map(function(k){
+   var w=V331_WAR_AUTH[k];return "<div class='small'>⚔ "+w.attacker+" → "+w.defender+" • ilan: Yıl "+w.declaredYear+" Ay "+w.declaredMonth+" • Tur "+w.declaredTurn+"</div>";
+ }).join("");
+ return base.replace('<div class="card"><b>⚔ Devam Eden Savaşlar</b>','<div class="card"><b>⚔ Resmî Savaş Kayıtları</b>'+(rows||'<div class="small">Resmî savaş kaydı yok.</div>'));
+};
+</script>
+<script>
+/* ===== V34.0 — AGE OF CONQUEST'TEN ESİNLENEN SAVAŞ + DİPLOMASİ ÇEKİRDEĞİ =====
+   Kaldarya'nın diğer sistemlerine dokunmaz. */
+var V34_STATE={};
+function v34S(a,b){
+ var k=v331Key(a,b);
+ return V34_STATE[k]||(V34_STATE[k]={
+   stance:"peace", warning:false, warningTurn:-99, warStart:-99,
+   warScore:0, exhaustionA:0, exhaustionB:0, lastPeaceOffer:-99
+ });
+}
+function v34Rel(a,b){return v30D(a,b).relation}
+function v34PowerRatio(a,b){return v30Power(a)/Math.max(1,v30Power(b))}
+function v34Border(a,b){
+ return v283Owned(a).some(function(c){
+   return v28Neighbors(c.name).some(function(n){return ownerOf(n)===b});
+ });
+}
+function v34CanDeclare(a,b){
+ var d=v30D(a,b),s=v34S(a,b);
+ if(v331Authorized(a,b))return false;
+ if(d.treaties.alliance||d.treaties.defensive)return false;
+ if(d.treaties.nonAggression && d.grievance<55)return false;
+ return v34Border(a,b) || d.grievance>45 || v34Rel(a,b)<-45;
+}
+function v34IntentScore(a,b){
+ var d=v30D(a,b),ratio=v34PowerRatio(a,b),score=0;
+ score += (-v34Rel(a,b))*.45 + d.grievance*.55 + d.fear*.08;
+ score += (ratio-1)*28;
+ if(v34Border(a,b))score+=15;
+ if(d.treaties.trade)score-=12;
+ if(d.treaties.friendship)score-=22;
+ if(d.treaties.nonAggression)score-=28;
+ if(d.treaties.alliance||d.treaties.defensive)score-=80;
+ return score;
+}
+function v34Warn(a,b){
+ var st=v34S(a,b);
+ if(st.warning && K.turn-st.warningTurn<3)return;
+ st.warning=true;st.warningTurn=K.turn;st.stance="crisis";
+ v30Mem(a,b,"Sınır krizi ve savaş tehdidi",-8,-6,8);
+ v33Event("tension","Savaş Tehdidi",a+" yönetimi "+b+" ile ilişkilerin kritik seviyeye geldiğini açıkladı.",a,b);
+ if(a===K.playerRegion||b===K.playerRegion){
+   var e=a===K.playerRegion?b:a;
+   say("⚠ SAVAŞ TEHDİDİ: "+e+" ile ilişkiler kritik. Savaşlar bölümünde kriz kaydı oluşturuldu.");
+ }
+}
+function v34Declare(a,b){
+ if(!v34CanDeclare(a,b))return false;
+ var st=v34S(a,b);
+ setWar(a,b,true); st.stance="war";st.warStart=K.turn;st.warning=false;
+ return true;
+}
+function v34PeaceValue(a,b){
+ var st=v34S(a,b),d=v30D(a,b),ratio=v34PowerRatio(a,b);
+ return d.warFatigue*.7 + Math.abs(st.warScore)*.25 + (ratio<.75?18:0) + (d.relation>-35?8:0);
+}
+function v34TryPeace(a,b){
+ if(!v331Authorized(a,b))return false;
+ var st=v34S(a,b);
+ if(K.turn-st.lastPeaceOffer<3)return false;
+ st.lastPeaceOffer=K.turn;
+ if(v34PeaceValue(a,b)>45){
+   setWar(a,b,false);st.stance="peace";st.warning=false;
+   v30D(a,b).warFatigue=Math.max(0,v30D(a,b).warFatigue-20);
+   return true;
+ }
+ return false;
+}
+/* AI: önce uyarı/kriz, sonra koşullar sürerse savaş. */
+function v34DiplomaticBrain(r){
+ if(!v28Alive(r))return;
+ var enemies=v283Regions().filter(function(x){return x!==r&&!V28_DESTROYED[x]});
+ var current=enemies.filter(function(x){return v331Authorized(r,x)});
+ if(current.length){
+   current.forEach(function(e){v34TryPeace(r,e)});
+   return;
+ }
+ var cand=null,bs=-999;
+ enemies.forEach(function(e){
+   var z=v34IntentScore(r,e);
+   if(z>bs){bs=z;cand=e}
+ });
+ if(!cand)return;
+ var st=v34S(r,cand);
+ if(bs>48 && v34CanDeclare(r,cand)){
+   if(!st.warning)v34Warn(r,cand);
+   else if(K.turn>st.warningTurn && bs>52)v34Declare(r,cand);
+ }
+}
+/* Diplomatik teklifler deterministik ağırlıklı: ilişki/güven/çıkar yetersizse reddedilir. */
+v30Propose=function(other,type){
+ var d=v30D(K.playerRegion,other);
+ if(d.treaties[type]){say("📜 Bu anlaşma zaten aktif.");return}
+ if(v331Authorized(K.playerRegion,other)){say("⚔ Savaş sürerken bu anlaşma teklif edilemez.");return}
+ var score=v30Value(other,K.playerRegion,type);
+ if(score>=18){
+   v30Treaty(K.playerRegion,other,type,true);
+   say("🤝 "+other+" kabul etti: "+v30Label(type)+".");
+ }else{
+   v30Mem(K.playerRegion,other,"Reddedilen "+v30Label(type)+" teklifi",-1,0,0);
+   v33Event("tension","Diplomatik Ret",other+" • "+v30Label(type)+" teklifini yetersiz güven/çıkar nedeniyle reddetti.",K.playerRegion,other);
+   say("❌ "+other+" teklifi reddetti. İlişki, güven veya karşılıklı çıkar henüz yeterli değil.");
+ }
+ openDiplomacy();
+};
+/* Savaş puanı: gerçek fetihler savaşın gidişatını değiştirir. */
+var v34Owner=setOwner;
+setOwner=function(city,newOwner,by,force){
+ var old=ownerOf(city),z=v34Owner.apply(this,arguments);
+ if(z && old && old!==newOwner && v331Authorized(newOwner,old)){
+   var st=v34S(newOwner,old);
+   st.warScore += 10;
+   v30D(newOwner,old).warFatigue=Math.min(100,v30D(newOwner,old).warFatigue+4);
+ }
+ return z;
+};
+/* Savaş merkezi: kriz/uyarı ve savaş puanı görünür. */
+var v34Wars=v33WarsHTML;
+v33WarsHTML=function(){
+ var h=v34Wars();
+ var rows=[];
+ Object.keys(V34_STATE).forEach(function(k){
+   var x=V34_STATE[k],p=k.split("||");
+   if(x.warning||x.stance==="war")rows.push(
+     "<div style='padding:7px 0;border-bottom:1px solid #42516b'><b>"+
+     (x.stance==="war"?"⚔ SAVAŞ":"⚠ KRİZ")+
+     " • "+p[0]+" / "+p[1]+"</b><div class='small'>Savaş puanı: "+x.warScore+
+     (x.warning?" • Savaş tehdidi aktif":"")+"</div></div>"
+   );
+ });
+ return h.replace("</div></div>",(rows.length?"<div class='card'><b>🎯 Kriz ve Savaş Durumu</b>"+rows.join("")+"</div>":"")+"</div></div>");
+};
+/* AI turu bittikten sonra diplomatik akıl çalışır; hareketten önceki savaş durumu bir sonraki tur için nettir. */
+var v34AITurn=v28AITurn;
+v28AITurn=function(r){v34AITurn(r);v34DiplomaticBrain(r)};
+</script>
+<script>
+/* V35 — Coğrafyaya dayalı devlet doktrinleri ve savaşın net maliyet hesabı. */
+var V35_DOCTRINE={
+ "Kaldarya Batı":{name:"Sınır ve nehir savunması",terrain:/orman|nehir|geçit/i,goal:"Sınır geçitlerini korumak; Merkez güçlenirse denge kurmak.",risk:1.3},
+ "Kaldarya Merkez":{name:"Cephe dengesi",terrain:/ova|nehir|yol/i,goal:"İki cepheli savaştan kaçınmak, komşularla denge kurmak.",risk:1.55},
+ "Kaldarya Doğu":{name:"Doğu sınırı",terrain:/geçit|dağ|kale/i,goal:"Doğu geçitlerini ve büyük yerleşimi savunmak.",risk:1.18},
+ "Aerion":{name:"Deniz koridorları",terrain:/kıyı|liman|ada|kanal/i,goal:"Limanları ve Valdor bağlantısını güvenceye almak.",risk:1.28},
+ "Valdor":{name:"Ticaret yolları",terrain:/kıyı|liman|yol|kanal/i,goal:"Ticareti ve Aerion geçişini açık tutmak.",risk:1.65},
+ "Zafran":{name:"Güney geçitleri",terrain:/geçit|dağ|çöl|kum/i,goal:"Kuzey geçitlerini tutmak, ticaret yolunu korumak.",risk:1.4},
+ "Eldoria":{name:"Orman savunması",terrain:/orman|nehir/i,goal:"Orman sınırlarını ve himaye bağlarını korumak.",risk:1.65},
+ "Vardun":{name:"Bozkır manevrası",terrain:/bozkır|ova|geçit/i,goal:"Açık arazide hareket üstünlüğü kurmak.",risk:1.1},
+ "Drakmir":{name:"Sınır baskısı",terrain:/kale|geçit|dağ/i,goal:"Savunulabilir sınır ve stratejik kaleler edinmek.",risk:1.08},
+ "Lunaris":{name:"Ada ve iç güvenlik",terrain:/ada|kıyı|orman/i,goal:"Bağımsızlığı ve güvenli geçişleri korumak.",risk:1.7},
+ "Thalgrim":{name:"Dağ geçitleri",terrain:/dağ|geçit|kale/i,goal:"Dağ geçitlerini elde tutmak.",risk:1.65}
+};
+function v35Doctrine(r){return V35_DOCTRINE[r]||{name:"Sınır güvenliği",terrain:/geçit|kale/i,goal:"Güvenli sınır ve istikrarlı hazine.",risk:1.35}}
+function v35Units(r){return v31AllUnits(r).filter(function(u){return u.soldiers>0})}
+function v35Power(r){
+ return v35Units(r).reduce(function(n,u){return n+(u.soldiers||0)*(.55+(u.supply==null?70:u.supply)/220)*(.7+(u.morale==null?70:u.morale)/300)},0)
+}
+function v35Neighbors(r){return v286Borders(r).filter(function(e){return e!==r&&!V28_DESTROYED[e]})}
+function v35CityValue(r,e){
+ var best=0;
+ v283Owned(e).forEach(function(c){
+  if(!v28Neighbors(c.name).some(function(n){return ownerOf(n)===r}))return;
+  var info=K.info[c.name]||c,t=(info.terrain||"")+" "+(info.type||"")+" "+c.name;
+  var value=10+(v35Doctrine(r).terrain.test(t)?11:0);
+  if(typeof PASS_CITIES!=="undefined"&&PASS_CITIES[c.name])value+=12;
+  if(/başkent|büyük|liman|kale/i.test(t))value+=8;
+  var defenders=v31UnitsAt(e,c.name),def=defenders.reduce(function(n,u){return n+(u.soldiers||0)},0);
+  value-=Math.min(30,def*1.4);
+  if(value>best)best=value
+ });
+ return best
+}
+function v35WarDecision(r,e){
+ var d=v30D(r,e),doc=v35Doctrine(r),own=v283Owned(r),theirs=v283Owned(e);
+ if(r===e||!own.length||!theirs.length||!v34Border(r,e)||v331Authorized(r,e))
+  return {score:-999,reason:"Ulaşılabilir sınır hedefi yok"};
+ if(d.treaties.alliance||d.treaties.defensive||d.treaties.nonAggression)
+  return {score:-999,reason:"Yürürlükteki anlaşma"};
+ var mine=v35Power(r),enemy=v35Power(e),st=r===K.playerRegion?{gold:K.gold}:v28State(r);
+ var fronts=v283Regions().filter(function(x){return x!==r&&x!==e&&v331Authorized(r,x)});
+ var exposed=v35Neighbors(r).filter(function(x){return x!==e&&!v331Authorized(r,x)&&v35Power(x)>mine*.7});
+ var allies=v283Regions().filter(function(x){return x!==r&&x!==e&&!V28_DESTROYED[x]&&(v30Has(e,x,"defensive")||v30Has(e,x,"alliance"))});
+ var units=v35Units(r),avgSupply=units.length?units.reduce(function(n,u){return n+(u.supply==null?70:u.supply)},0)/units.length:0;
+ var ratio=mine/Math.max(1,enemy+allies.reduce(function(n,x){return n+v35Power(x)*.55},0));
+ var gain=v35CityValue(r,e)+Math.min(17,Math.max(0,ratio-1)*13)+
+          Math.min(25,d.grievance*.24)+Math.max(0,-d.relation)*.07;
+ var loss=(enemy/Math.max(1,mine))*17*doc.risk+
+          Math.max(0,1.15-ratio)*18*doc.risk+
+          fronts.length*25+exposed.length*5*doc.risk+allies.length*14+
+          Math.max(0,55-avgSupply)*.8+
+          (st.gold<25?25:st.gold<45?9:0)+d.warFatigue*.24;
+ var score=Math.round(gain-loss);
+ if(mine<13||ratio<.83||avgSupply<42||fronts.length>0)score=Math.min(score,-25);
+ return {score:score,reason:score>=13?"Stratejik kazanç beklenen maliyeti aşıyor":
+   fronts.length?"Başka cephede savaş sürüyor":ratio<.83?"Güç dengesi elverişsiz":
+   avgSupply<42?"İkmal yetersiz":exposed.length?"Sınır güvenliği ve kayıp riski":"Savaşın maliyeti yüksek",
+   gain:Math.round(gain),loss:Math.round(loss)}
+}
+/* Önceki AI katmanlarının kolay savaş seçimini aynı maliyet hesabına bağla. */
+v29WarScore=function(r,e){return v35WarDecision(r,e).score};
+v29ChooseEnemy=function(r){
+ var list=v35Neighbors(r).map(function(e){return {e:e,s:v35WarDecision(r,e).score}});
+ list.sort(function(a,b){return b.s-a.s});return list.length&&list[0].s>=13?list[0].e:null
+};
+v32BestTarget=v29ChooseEnemy;
+v32ShouldAttack=function(r,e){return v35WarDecision(r,e).score>=13};
+v34CanDeclare=function(a,b){return v35WarDecision(a,b).score>=13};
+v34IntentScore=function(a,b){return v35WarDecision(a,b).score};
+/* Kriz ancak gerçekten uygun hedefte başlar; bekleme sırasında koşullar değişirse iptal. */
+v34DiplomaticBrain=function(r){
+ if(!v28Alive(r))return;
+ var foes=v283Regions().filter(function(e){return e!==r&&v331Authorized(r,e)});
+ if(foes.length){foes.forEach(function(e){v34TryPeace(r,e)});return}
+ var e=v29ChooseEnemy(r),list=v283Regions();
+ list.forEach(function(x){if(x!==r&&x!==e){var s=v34S(r,x);if(s.warning){s.warning=false;s.stance="peace"}}});
+ if(!e)return;
+ var state=v34S(r,e),decision=v35WarDecision(r,e);
+ if(!state.warning){v34Warn(r,e);return}
+ if(K.turn>state.warningTurn&&decision.score>=13)v34Declare(r,e)
+};
+/* Eski AI turu içindeki doğrudan savaş ilanı da kriz/uyarı aşamasını kullanır. */
+var v35SetWar=setWar;
+setWar=function(a,b,on){
+ if(on&&a!==K.playerRegion&&!v331Authorized(a,b)){
+  var s=v34S(a,b),decision=v35WarDecision(a,b);
+  if(decision.score<13||!s.warning||K.turn<=s.warningTurn)return false
+ }
+ var result=v35SetWar.apply(this,arguments);
+ if(a!==K.playerRegion&&result){
+  var state=v34S(a,b);
+  state.stance=on?"war":"peace";
+  state.warning=false;
+  if(on)state.warStart=K.turn
+ }
+ return result
+};
+/* Hedefe olmayan barış geçişlerinde yapay ordular sınırda kalır. */
+var v35MoveChoice=v28ChooseMove;
+v28ChooseMove=function(r,u){
+ var n=v35MoveChoice(r,u),o=n&&ownerOf(n);
+ if(o&&o!==r&&!v331Authorized(r,o)&&!hasMilitaryAccess(r,o))return null;
+ if(o&&o!==r&&v331Authorized(r,o)){
+  var mine=v31Strength(u,n,false),def=v31UnitsAt(o,n).reduce(function(p,x){return p+v31Strength(x,n,true)},0);
+  if(def>mine*1.2)return null
+ }
+ return n
+};
+var v35DiplomacyPanel=openDiplomacy;
+openDiplomacy=function(){
+ v35DiplomacyPanel();
+ var box=document.querySelector("#panel");
+ if(!box)return;
+ v283Regions().filter(function(r){return r!==K.playerRegion&&!V28_DESTROYED[r]}).forEach(function(r){
+  var heading=Array.prototype.find.call(box.querySelectorAll(".card > b"),function(b){return b.textContent.trim()===r});
+  if(!heading)return;
+  var d=v35Doctrine(r),p=v35Neighbors(r).map(function(e){return {e:e,v:v35WarDecision(r,e)}}).sort(function(a,b){return b.v.score-a.v.score})[0];
+  var note=document.createElement("div");note.className="small";
+  note.textContent="🧭 "+d.name+" — "+d.goal+" Güncel değerlendirme: "+(p?p.e+" • "+p.v.reason:"Güvenli sınır hedefi yok")+".";
+  heading.parentNode.insertBefore(note,heading.nextSibling)
+ })
+};
 </script>
 </body></html>
