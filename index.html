@@ -568,7 +568,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .hireCard{border:1px solid #6f6040;border-radius:8px;padding:7px;background:#172238}
 </style>
 <script>
-/* ===== KALDARYA V29.0 — tek ve temiz oyun çekirdeği ===== */
+/* ===== KALDARYA V30.0 — tek ve temiz oyun çekirdeği ===== */
 var V28_DESTROYED={};
 var V28_AI={};
 var V28_MARKET=[];
@@ -801,7 +801,7 @@ setTimeout(function(){
 
 
 <script>
-/* V29.0 — Kral Orduları ve genel çekirdek hata düzeltmesi */
+/* V30.0 — Kral Orduları ve genel çekirdek hata düzeltmesi */
 var V281_REL={};
 function v281EnsureKingArmies(){
  Object.keys(capitals).forEach(function(region){
@@ -858,7 +858,7 @@ v28AITurn=function(region){
  for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(region,units[j]);
  if(st.ap>0)v281Diplomacy(region);
 };
-setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V29.0 init",e)}},350);
+setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V30.0 init",e)}},350);
 </script>
 
 <script>
@@ -882,7 +882,7 @@ function v283HireGeneral(id){
  K.v283Market=K.v283Market.filter(function(x){return x.id!==id});if(typeof refreshTop==="function")refreshTop();say(c.name+" işe alındı • 8 askerlik General Ordusu kuruldu.")
 }
 function v283HireHTML(){return '<div class="card"><h3>⚔ General İşe Al</h3>'+v283Candidates().map(function(c){return '<div class="card"><b>'+c.name+'</b> • '+c.price+' altın<br><span class="small">Tecrübe '+c.exp+' • Yetenek '+c.skill+' • '+c.trait+'</span><br><button onclick="v283HireGeneral(\''+c.id+'\')">İşe Al</button></div>'}).join("")+'</div>'}
-/* V29.0: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
+/* V30.0: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
 
 function v283AIHire(r){var st=v28State(r),live=st.generals.filter(function(g){return g.alive&&!g.captured});if(live.length>=2||st.ap<=0)return false;
  var e=1+Math.floor(Math.random()*5),sk=1+Math.floor(Math.random()*5),price=10+e*4+sk*3,city=v283Capital(r);if(st.gold<price||!city)return false;st.gold-=price;st.ap--;
@@ -916,7 +916,7 @@ openCapital=function(tab){
  var body='<div class="row"><h2 style="flex:1">👑 Kaldarya Yönetim Merkezi</h2><button onclick="closePanel()">✕</button></div><div class="row tabs"><button onclick="openCapital(\'family\')">Aile Ağacı</button><button onclick="openDiplomacy()">Diplomasi</button><button onclick="openCapital(\'tax\')">Vergi Sistemi</button><button onclick="openPrison()">⛓ Hapishane</button></div>';
  body+=familyHTML()+v284ArmyAuditHTML();panel(body);
 };
-setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V29.0 king audit",e)}},1000);
+setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V30.0 king audit",e)}},1000);
 </script>
 
 
@@ -966,7 +966,7 @@ v28AITurn=function(r){if(!v28Alive(r))return;var st=v28State(r),own=v283Owned(r)
 </script>
 
 <script>
-/* ===== V29.0 — KÜLTÜREL, HAFIZALI, UYARLANAN STRATEJİK AI =====
+/* ===== V30.0 — KÜLTÜREL, HAFIZALI, UYARLANAN STRATEJİK AI =====
    Amaç: aynı hamleyi döndürmek yerine devlet karakteri + mevcut durum + geçmiş sonuçlar
    üzerinden her tur yeniden değerlendirme yapmak. */
 var V29_BRAIN={};
@@ -1121,4 +1121,164 @@ v28AITurn=function(r){
 };
 </script>
 
+<script>
+/* ===== V30.0 — DERİN DİPLOMASİ ===== */
+var V30_DIP={};
+function v30Key(a,b){return [a,b].sort().join("||")}
+function v30D(a,b){
+ var k=v30Key(a,b);
+ if(!V30_DIP[k])V30_DIP[k]={relation:0,trust:50,fear:10,grievance:0,warFatigue:0,
+   treaties:{access:false,trade:false,nonAggression:false,friendship:false,defensive:false,alliance:false},
+   memory:[],lastAction:"",peaceTurns:0,warTurns:0};
+ return V30_DIP[k]
+}
+function v30Mem(a,b,text,rel,trust,griev){
+ var d=v30D(a,b);d.memory.unshift({turn:K.turn,text:text});
+ if(d.memory.length>8)d.memory.pop();
+ d.relation=Math.max(-100,Math.min(100,d.relation+(rel||0)));
+ d.trust=Math.max(0,Math.min(100,d.trust+(trust||0)));
+ d.grievance=Math.max(0,Math.min(100,d.grievance+(griev||0)));
+ if(a===K.playerRegion&&diplomacy[b]!=null)diplomacy[b]=d.relation;
+ if(b===K.playerRegion&&diplomacy[a]!=null)diplomacy[a]=d.relation;
+}
+function v30Init(){
+ var rs=v283Regions();
+ for(var i=0;i<rs.length;i++)for(var j=i+1;j<rs.length;j++){
+   var a=rs[i],b=rs[j],d=v30D(a,b);
+   if(a===K.playerRegion&&diplomacy[b]!=null)d.relation=diplomacy[b];
+   if(b===K.playerRegion&&diplomacy[a]!=null)d.relation=diplomacy[a];
+   if(sameKaldaryaCulture(a,b)){d.relation+=12;d.trust+=8}
+ }
+ [["Kaldarya Merkez","Kaldarya Batı"],["Kaldarya Merkez","Kaldarya Doğu"]].forEach(function(x){v30D(x[0],x[1]).treaties.access=true});
+}
+function v30Power(r){return typeof v286Power==="function"?v286Power(r):0}
+function v30Value(a,b,type){
+ var d=v30D(a,b),ca=v29Culture(a),cb=v29Culture(b),score=d.relation*.55+d.trust*.45-d.grievance*.65;
+ var pa=v30Power(a),pb=v30Power(b),ratio=pb/Math.max(1,pa);
+ if(type==="trade")score+=ca.econ*22+cb.econ*15+12;
+ if(type==="access")score+=d.trust*.15+8;
+ if(type==="nonAggression")score+=ca.caution*18+cb.caution*12+8;
+ if(type==="friendship")score+=10;
+ if(type==="defensive")score+=d.trust*.18+(ratio>.75&&ratio<1.6?10:0)-10;
+ if(type==="alliance")score+=d.trust*.25+d.relation*.15-25;
+ if(atWar(a,b))score-=100;
+ return score
+}
+function v30Label(t){return {access:"Askerî Geçiş",trade:"Ticaret",nonAggression:"Saldırmazlık",friendship:"Dostluk",defensive:"Savunma İttifakı",alliance:"Askerî İttifak"}[t]||t}
+function v30Treaty(a,b,type,on){
+ var d=v30D(a,b);d.treaties[type]=!!on;
+ if(!on)v30Mem(a,b,v30Label(type)+" anlaşması feshedildi",-5,-8,4);
+ else v30Mem(a,b,v30Label(type)+" anlaşması imzalandı",type==="alliance"?10:5,type==="alliance"?10:5,0);
+ if(a===K.playerRegion||b===K.playerRegion){
+   var o=a===K.playerRegion?b:a;
+   if(treaties[o]){
+     if(type==="access")treaties[o].access=!!on;
+     if(type==="friendship")treaties[o].friendship=!!on;
+     if(type==="alliance")treaties[o].alliance=!!on;
+   }
+   if(type==="access")militaryAccess[o]=!!on;
+ }
+}
+function v30Has(a,b,type){return !!v30D(a,b).treaties[type]}
+hasMilitaryAccess=function(from,to){return from===to||(!atWar(from,to)&&v30Has(from,to,"access"))};
+
+var v30OldSetWar=setWar;
+setWar=function(a,b,on){
+ var was=atWar(a,b);wars[a+"|"+b]=!!on;wars[b+"|"+a]=!!on;
+ var d=v30D(a,b);
+ if(on&&!was){
+   Object.keys(d.treaties).forEach(function(t){d.treaties[t]=false});
+   if(a===K.playerRegion||b===K.playerRegion){var o=a===K.playerRegion?b:a;if(treaties[o]){treaties[o].access=treaties[o].friendship=treaties[o].alliance=false}militaryAccess[o]=false}
+   v30Mem(a,b,"Savaş ilanı",-35,-30,30);d.warTurns=0;
+   /* Himaye: Batı -> Eldoria, Doğu -> Drakmir */
+   var sb=statusOf(b),sa=statusOf(a);
+   if(sb.overlord&&sb.overlord!==a&&!atWar(a,sb.overlord)){wars[a+"|"+sb.overlord]=wars[sb.overlord+"|"+a]=true;v30Mem(a,sb.overlord,"Himaye yükümlülüğü nedeniyle savaşa katıldı",-18,-5,12)}
+   if(sa.overlord&&sa.overlord!==b&&!atWar(b,sa.overlord)){wars[b+"|"+sa.overlord]=wars[sa.overlord+"|"+b]=true;v30Mem(b,sa.overlord,"Himaye yükümlülüğü nedeniyle savaşa katıldı",-18,-5,12)}
+   /* Savunma/askerî ittifakları savaşa çağır */
+   v283Regions().forEach(function(x){
+     if(x!==a&&x!==b&&!V28_DESTROYED[x]&&(v30Has(b,x,"defensive")||v30Has(b,x,"alliance"))&&!atWar(a,x)){wars[a+"|"+x]=wars[x+"|"+a]=true;v30Mem(a,x,b+" ittifakı nedeniyle savaşa katıldı",-15,-3,8)}
+   });
+ }else if(!on&&was){v30Mem(a,b,"Barış yapıldı",8,3,-12);d.peaceTurns=0}
+};
+function v30Propose(other,type){
+ var d=v30D(K.playerRegion,other);
+ if(d.treaties[type]){say("📜 Bu anlaşma zaten aktif.");return}
+ if(atWar(K.playerRegion,other)){say("⚔ Savaş sürerken bu anlaşma teklif edilemez.");return}
+ var score=v30Value(other,K.playerRegion,type),chance=Math.max(8,Math.min(92,45+score*.55));
+ if(Math.random()*100<chance){v30Treaty(K.playerRegion,other,type,true);say("🤝 "+other+" kabul etti: "+v30Label(type)+".")}
+ else{v30Mem(K.playerRegion,other,"Reddedilen "+v30Label(type)+" teklifi",-1,0,0);say("❌ "+other+" "+v30Label(type)+" teklifini reddetti.")}
+ openDiplomacy();
+}
+function v30Cancel(other,type){if(!v30Has(K.playerRegion,other,type))return;v30Treaty(K.playerRegion,other,type,false);openDiplomacy()}
+function v30Peace(other){
+ if(!atWar(K.playerRegion,other))return;
+ var d=v30D(K.playerRegion,other),mine=v30Power(K.playerRegion),theirs=v30Power(other);
+ var chance=Math.max(8,Math.min(92,38+d.relation*.2+d.warFatigue*.5+(theirs<mine?8:-5)));
+ if(Math.random()*100<chance){setWar(K.playerRegion,other,false);say("🕊 "+other+" barış teklifini kabul etti.")}
+ else{v30Mem(K.playerRegion,other,"Barış teklifi reddedildi",-2,0,1);say("❌ "+other+" barış teklifini reddetti.")}
+ openDiplomacy();
+}
+function v30Gift(other,amt){
+ if(K.gold<amt){say("💰 Yeterli altın yok.");return}K.gold-=amt;
+ v30Mem(K.playerRegion,other,amt+" altın hediye gönderildi",amt>=20?12:amt>=10?7:4,amt>=20?6:3,0);sync();openDiplomacy()
+}
+function v30RelationName(v){return v>=70?"Çok sıcak":v>=35?"Dostane":v>=10?"Olumlu":v>-10?"Tarafsız":v>-35?"Soğuk":v>-70?"Düşmanca":"Kan düşmanı"}
+function v30TreatyButtons(o){
+ var types=["trade","access","nonAggression","friendship","defensive","alliance"];
+ return types.map(function(t){return v30Has(K.playerRegion,o,t)?
+ '<button onclick="v30Cancel(\''+o+'\',\''+t+'\')">Feshet: '+v30Label(t)+'</button>':
+ '<button onclick="v30Propose(\''+o+'\',\''+t+'\')">'+v30Label(t)+' Teklif Et</button>'}).join("")
+}
+openDiplomacy=function(){
+ var h='<div class="row"><h2 style="flex:1">🤝 Derin Diplomasi</h2><button onclick="closePanel()">✕</button></div>'+
+ '<div class="small">İlişki tek başına karar vermez: güven, korku, geçmiş kırgınlıklar, askerî güç, kültür ve anlaşmalar birlikte değerlendirilir.</div>';
+ v283Regions().filter(function(o){return o!==K.playerRegion&&!V28_DESTROYED[o]}).forEach(function(o){
+   var d=v30D(K.playerRegion,o),act=Object.keys(d.treaties).filter(function(t){return d.treaties[t]}).map(v30Label);
+   var mem=d.memory.slice(0,3).map(function(m){return "• "+m.text}).join("<br>")||"Yakın geçmişte önemli olay yok.";
+   h+='<div class="card"><b>'+o+'</b> • '+v30RelationName(d.relation)+' ('+Math.round(d.relation)+')'+
+   '<div class="small">Güven '+Math.round(d.trust)+' • Korku '+Math.round(d.fear)+' • Kırgınlık '+Math.round(d.grievance)+
+   '<br>Aktif: '+(act.length?act.join(" • "):"Anlaşma yok")+'<br><b>Diplomatik hafıza</b><br>'+mem+'</div>'+
+   '<div class="row">'+v30TreatyButtons(o)+'</div>'+
+   '<div class="row"><button onclick="v30Gift(\''+o+'\',5)">🎁 5</button><button onclick="v30Gift(\''+o+'\',10)">🎁 10</button><button onclick="v30Gift(\''+o+'\',20)">🎁 20</button></div>'+
+   '<div class="row">'+(atWar(K.playerRegion,o)?'<button onclick="v30Peace(\''+o+'\')">🕊 Barış Teklif Et</button>':'<button class="danger" onclick="setWar(K.playerRegion,\''+o+'\',true);openDiplomacy()">⚔ Savaş İlan Et</button>')+'</div></div>';
+ });
+ panel(h)
+};
+function v30AIDiplomacy(r){
+ var b=v29Brain(r),me=v29StateEval(r),others=v283Regions().filter(function(x){return x!==r&&!V28_DESTROYED[x]});
+ others.forEach(function(o){
+   var d=v30D(r,o);if(atWar(r,o)){d.warTurns++;d.warFatigue=Math.min(100,d.warFatigue+2);d.relation=Math.max(-100,d.relation-.5)}
+   else{d.peaceTurns++;d.warFatigue=Math.max(0,d.warFatigue-1);d.grievance=Math.max(0,d.grievance-.15)}
+   d.fear=Math.max(0,Math.min(100,10+(v30Power(o)-v30Power(r))*2));
+ });
+ if(atWar(r,v286WarTarget(r)||""))return;
+ var choices=[];
+ others.forEach(function(o){
+   if(atWar(r,o))return;
+   ["trade","nonAggression","access","friendship","defensive","alliance"].forEach(function(t){
+     if(!v30Has(r,o,t)){var sc=v30Value(r,o,t)-v29RepeatPenalty(r,"dip:"+t+":"+o);choices.push({o:o,t:t,s:sc})}
+   })
+ });
+ choices.sort(function(a,b){return b.s-a.s});
+ if(choices[0]&&choices[0].s>35){
+   var c=choices[0],accept=v30Value(c.o,r,c.t);
+   if(accept>15){v30Treaty(r,c.o,c.t,true);v29Remember(r,"dip:"+c.t+":"+c.o,true);K.news.unshift("🤝 "+r+" ile "+c.o+" arasında "+v30Label(c.t)+" anlaşması imzalandı.")}
+   else v29Remember(r,"dip:"+c.t+":"+c.o,false)
+ }
+}
+var v30OldAITurn=v28AITurn;
+v28AITurn=function(r){v30OldAITurn(r);if(v28Alive(r))v30AIDiplomacy(r)};
+function v30TurnRelations(){
+ var rs=v283Regions();
+ for(var i=0;i<rs.length;i++)for(var j=i+1;j<rs.length;j++){
+   var a=rs[i],b=rs[j],d=v30D(a,b);
+   if(v30Has(a,b,"trade")){var sa=v28State(a),sb=v28State(b);if(sa)sa.gold+=1;if(sb)sb.gold+=1;d.relation=Math.min(100,d.relation+.25);d.trust=Math.min(100,d.trust+.2)}
+   if(v30Has(a,b,"friendship"))d.relation=Math.min(100,d.relation+.15);
+   if(v30Has(a,b,"alliance"))d.trust=Math.min(100,d.trust+.2);
+ }
+}
+var v30OldEndTurn=endTurn;
+endTurn=function(){var z=v30OldEndTurn.apply(this,arguments);v30TurnRelations();return z};
+setTimeout(v30Init,900);
+</script>
 </body></html>
