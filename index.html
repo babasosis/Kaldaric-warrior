@@ -2493,4 +2493,218 @@ v33WarsHTML=function(){
   cards+'</div><div class="card"><b>📜 AI Karar Geçmişi</b>'+history+'</div>'
 };
 </script>
+<script>
+/* V38 — Kral yenilgisi, geçerli isyan devleti, resmî himaye savaşı ve fetih rengi. */
+function v38KingLoss(region,king,before,city,attacker){
+ if(!king||region===K.playerRegion||V28_DESTROYED[region]||before<=0)return;
+ /* Bir savaş yalnızca bir kez sayılır; başka ordunun yenilgisi kralı etkilemez. */
+ if(king.soldiers>=before)return;
+ king.defeats=(king.defeats||0)+1;
+ var routed=king.soldiers<=0||king.defeats>=3;
+ if(!routed){
+  K.news.unshift("♚ "+region+" Kral Ordusu "+king.defeats+"/3 ağır muharebe geçirdi.");
+  return
+ }
+ var survivors=king.soldiers||0;
+ king.soldiers=0;king.alive=false;king.dead=true;king.morale=0;
+ if(king.el)king.el.style.display="none";
+ K.news.unshift("☠ "+region+" kralı "+city+" yakınında öldü; Kral Ordusu dağıldı"+(survivors?" ("+survivors+" asker geri çekilirken dağıldı)":"")+".");
+ if(typeof v33Event==="function")v33Event("battle","Kral Ordusu Dağıldı",region+" kralı öldü; üç ağır yenilgi veya tam imha sonrası ordu dağıldı.",attacker,region);
+ v28Succession(region,city);
+ v28CheckDestroy(region)
+}
+/* Oyuncunun eski savaş paneli de dahil tüm doğrudan savaşlar aynı kral kuralına girer. */
+var v38OldBattle=v312Battle;
+v312Battle=function(ar,attackers,dr,city){
+ var ak=kingdomKings[ar],dk=kingdomKings[dr];
+ var ab=ak&&ak.soldiers||0,db=dk&&dk.soldiers||0;
+ var attackerBefore=attackers.reduce(function(n,u){return n+(u.soldiers||0)},0);
+ var defenderBefore=v312Defenders(dr,city).reduce(function(n,u){return n+(u.soldiers||0)},0);
+ var result=v38OldBattle.apply(this,arguments);
+ var attackerAfter=attackers.reduce(function(n,u){return n+(u.soldiers||0)},0);
+ var defenderAfter=v312Defenders(dr,city).reduce(function(n,u){return n+(u.soldiers||0)},0);
+ var attackerLoss=(attackerBefore-attackerAfter)/Math.max(1,attackerBefore);
+ var defenderLoss=(defenderBefore-defenderAfter)/Math.max(1,defenderBefore);
+ var defenderBeaten=result||dk&&dk.soldiers<=0||
+   defenderLoss>=.12&&defenderLoss>attackerLoss+.10;
+ var attackerBeaten=!result&&(
+   ak&&ak.soldiers<=0||attackerLoss>=.12&&attackerLoss>defenderLoss+.10);
+ if(db>0&&dk&&defenderBeaten)v38KingLoss(dr,dk,db,city,ar);
+ if(ab>0&&ak&&attackerBeaten)v38KingLoss(ar,ak,ab,city,dr);
+ return result
+};
+v31Battle=function(ar,attackers,dr,defenders,city){return v312Battle(ar,attackers,dr,city)};
+var v38OldResolveBattle=resolveBattle;
+resolveBattle=function(region){
+ var q=kingdomKings[region],before=q&&q.soldiers||0;
+ var count=K.battleHistory.length;
+ var result=v38OldResolveBattle.apply(this,arguments);
+ /* Eski panel sıfır askerde doğrudan veraseti çağırabilir; aynı ölümü tekrarlama. */
+ var won=K.battleHistory.length>count&&K.battleHistory[0].result==="Zafer";
+ if(q&&before>0&&q.soldiers>0&&q.soldiers<before&&won)v38KingLoss(region,q,before,q.at,K.playerRegion);
+ return result
+};
+function v38RebelRegion(parent){
+ var i=1,name;
+ do{name=parent+" İsyancıları "+i++}while(capitals[name]||V28_AI[name]);
+ return name
+}
+/* Dinamik isyancı krallıkları bütün AI, ordu ve diplomasi listelerine dahil edilir. */
+var v38OldRegions=v283Regions;
+v283Regions=function(){
+ var rs=v38OldRegions();
+ Object.keys(capitals).forEach(function(r){if(rs.indexOf(r)<0&&!V28_DESTROYED[r]&&v283Owned(r).length)rs.push(r)});
+ return rs
+};
+function v38Fragment(parent,st,deadCity){
+ var own=v283Owned(parent);
+ if(own.length<3)return null;
+ var candidates=own.filter(function(c){return c.name!==capitals[parent]&&c.name!==deadCity});
+ if(!candidates.length)candidates=own.filter(function(c){return c.name!==capitals[parent]});
+ if(!candidates.length)return null;
+ var count=Math.min(candidates.length,Math.max(1,Math.floor(own.length/3)));
+ var rebel=v38RebelRegion(parent),taken=candidates.slice(-count);
+ capitals[rebel]=taken[0].name;
+ politicalStatus[rebel]={kind:"Bağımsız Krallık",overlord:null,culture:statusOf(parent).culture};
+ kingdomColors[rebel]="#9a4565";
+ var rebelState=v28State(rebel);
+ rebelState.gold=Math.max(15,Math.floor(st.gold*.22));
+ rebelState.people=Math.max(35,65-st.people);
+ rebelState.armyLoyal=Math.max(40,70-st.armyLoyal);
+ rebelState.dynasty={king:rebel+" Önderi",heir:null,heirAlive:false,reigns:1};
+ st.gold=Math.max(0,st.gold-rebelState.gold);
+ taken.forEach(function(c){setOwner(c.name,rebel,"İç savaş","STATE_EVENT")});
+ v283EnsureKing(rebel);
+ var q=kingdomKings[rebel];if(q){q.soldiers=7;q.at=taken[0].name;q.supply=65;q.morale=65;v28MoveVisual(q)}
+ /* İsyancılar resmî iç savaşa girer; askerî geçiş fetih sayılmaz. */
+ v35SetWar(parent,rebel,true);
+ v34S(parent,rebel).stance="war";
+ K.news.unshift("⚠ "+parent+" içinde isyan: "+taken.map(function(c){return c.name}).join(", ")+" bağımsız "+rebel+" yönetimine geçti.");
+ v28RefreshPoliticalSurface(parent);
+ return rebel
+}
+v28Succession=function(region,deadCity){
+ if(V28_DESTROYED[region]||!v283Owned(region).length){v28CheckDestroy(region);return}
+ var st=v28State(region),dyn=st.dynasty||(st.dynasty={}),loyalty=(st.people+st.armyLoyal)/2;
+ if(loyalty<45)v38Fragment(region,st,deadCity);
+ var own=v283Owned(region);
+ if(!own.length){v28CheckDestroy(region);return}
+ var safe=own.find(function(c){return c.name!==deadCity&&c.name===capitals[region]})||
+          own.find(function(c){return c.name!==deadCity})||own[0];
+ var support=st.armyLoyal>st.people+9?"ordu":"halk";
+ var heir=dyn.heirAlive&&dyn.heir&&loyalty>=60;
+ dyn.reigns=(dyn.reigns||1)+1;
+ dyn.king=heir?dyn.heir:region+" Seçilmiş Kralı "+dyn.reigns;
+ dyn.heir=null;dyn.heirAlive=false;
+ var q=kingdomKings[region]||v283EnsureKing(region);
+ if(!q)return;
+ var cost=Math.min(12,Math.max(0,st.gold));
+ st.gold-=cost;
+ q.at=safe.name;q.alive=true;q.dead=false;q.captured=false;
+ q.soldiers=cost>=8?6:3;q.supply=65;q.morale=loyalty>=45?70:55;
+ q.defeats=0;q.name=region+" Kral Ordusu";q.army=q.name;
+ v28MoveVisual(q);
+ K.news.unshift("♔ "+region+": "+support+" "+(heir?"veliahtı":"yeni kralı")+" seçti. "+safe.name+" konumunda "+q.soldiers+" askerlik yeni Kral Ordusu kuruldu.");
+ if(typeof v33Event==="function")v33Event("treaty","Yeni Kral",region+" yönetiminde "+dyn.king+" tahta çıktı; "+support+" desteğiyle yeni ordu kuruldu.",region);
+};
+var v38OldShowKing=showKing;
+showKing=function(region){
+ v38OldShowKing(region);
+ var box=el("panel"),q=kingdomKings[region],st=V28_AI[region];
+ if(box&&q&&st&&st.dynasty){
+  var div=document.createElement("div");div.className="card";
+  div.textContent="Hükümdar: "+st.dynasty.king+" • Kral ordusunun bu hükümdarla yaşadığı ağır yenilgi: "+(q.defeats||0)+"/3";
+  box.appendChild(div)
+ }
+};
+/* Himaye: koruyucu devlet saldırıya uğrayan bağlı krallığı resmî savaşta savunur. */
+var V38_PROTECTION={};
+var v38OldSetWar=setWar;
+setWar=function(a,b,on){
+ var was=v331Authorized(a,b),result=v38OldSetWar.apply(this,arguments),now=v331Authorized(a,b);
+ if(on&&!was&&now){
+  var protector=statusOf(b).overlord;
+  if(protector&&protector!==a&&protector!==b&&!V28_DESTROYED[protector]&&v283Owned(protector).length){
+   var already=v331Authorized(a,protector);
+   var key=v331Key(a,b);
+   V38_PROTECTION[key]={attacker:a,ward:b,protector:protector,joined:!already};
+   if(!already){
+    v35SetWar(a,protector,true);
+    v34S(a,protector).stance="war";
+    v30Mem(a,protector,b+" himayesi nedeniyle savaşa katıldı",-18,-8,12);
+    K.news.unshift("🛡 "+protector+", himayesindeki "+b+" için "+a+" karşısında resmî savaşa katıldı.")
+   }
+  }
+ }
+ if(!on&&was&&!now){
+  var key=v331Key(a,b),link=V38_PROTECTION[key];
+  if(link){
+   delete V38_PROTECTION[key];
+   var other=Object.keys(V38_PROTECTION).some(function(k){
+    var x=V38_PROTECTION[k];return x.attacker===link.attacker&&x.protector===link.protector
+   });
+   if(link.joined&&!other&&v331Authorized(link.attacker,link.protector)){
+    v35SetWar(link.attacker,link.protector,false);
+    v34S(link.attacker,link.protector).stance="peace";
+    K.news.unshift("🕊 "+link.protector+" himaye savaşı "+link.ward+" barışıyla sona erdi.")
+   }
+  }
+ }
+ return result
+};
+var v38OldDestroy=v28Destroy;
+v28Destroy=function(region){
+ if(V28_DESTROYED[region])return;
+ v38OldDestroy(region);
+ Object.keys(V331_WAR_AUTH).forEach(function(key){
+  var w=V331_WAR_AUTH[key];
+  if(w&&w.active&&key.split("||").indexOf(region)>=0)
+   setWar(w.attacker,w.defender,false)
+ });
+ Object.keys(politicalStatus).forEach(function(ward){
+  if(politicalStatus[ward].overlord===region){
+   politicalStatus[ward].overlord=null;
+   politicalStatus[ward].kind="Bağımsız Krallık";
+   K.news.unshift("📜 "+ward+", "+region+" yıkıldığı için bağımsızlığını kazandı.")
+  }
+ })
+};
+/* Noktasal kareler yerine bitişik, sınırda sonlanan boyama hücreleri. */
+function v38Cell(city){
+ var p=K.info[city],r=112,poly=[[-r,-r],[r,-r],[r,r],[-r,r]];
+ if(!p)return poly;
+ DATA.forEach(function(other){
+  if(other.name===city)return;
+  var dx=other.x-p.x,dy=other.y-p.y;
+  if(Math.abs(dx)>2*r||Math.abs(dy)>2*r)return;
+  var limit=(dx*dx+dy*dy)/2,inside=function(pt){return pt[0]*dx+pt[1]*dy<=limit+0.001};
+  var next=[];
+  for(var i=0;i<poly.length;i++){
+   var a=poly[i],b=poly[(i+1)%poly.length],ia=inside(a),ib=inside(b);
+   if(ia)next.push(a);
+   if(ia!==ib){
+    var denom=(b[0]-a[0])*dx+(b[1]-a[1])*dy;
+    if(denom){var t=(limit-a[0]*dx-a[1]*dy)/denom;next.push([a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])])}
+   }
+  }
+  poly=next
+ });
+ return poly
+}
+refreshTerritoryTint=function(n){
+ var c=K.info[n],st=settlements[n];if(!c||!st)return;
+ var id="tint_"+n.replace(/[^A-Za-z0-9]/g,"_"),x=document.getElementById(id);
+ if(st.owner===st.originalOwner){if(x)x.remove();return}
+ if(!x){x=document.createElement("div");x.id=id;x.className="territoryTint";el("stage").appendChild(x)}
+ var poly=v38Cell(n),r=112;
+ x.style.width=(2*r)+"px";x.style.height=(2*r)+"px";
+ x.style.left=c.x+"px";x.style.top=c.y+"px";
+ x.style.clipPath="polygon("+poly.map(function(p){return (50+p[0]*50/r).toFixed(2)+"% "+(50+p[1]*50/r).toFixed(2)+"%"}).join(",")+")";
+ x.style.background=kingdomColors[st.owner]||"#9a4565";
+ x.style.opacity=".86";x.style.mixBlendMode="color";
+ x.title=n+" • "+st.owner
+};
+v28Color=function(owner){return kingdomColors[owner]||"#9a4565"};
+refreshAllTerritoryTints();
+</script>
 </body></html>
