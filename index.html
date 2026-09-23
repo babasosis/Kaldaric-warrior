@@ -1089,7 +1089,7 @@ v28AITurn=function(r){
  /* Barış döneminde kültür ve durumuna göre savaş kararı. */
  if(!v286WarTarget(r)&&goal.indexOf("war:")===0&&st.ap>0){
    var e=goal.slice(4);
-   if(v29WarScore(r,e)>12){setWar(r,e,true);st.ap--;b.warTurns=0;v29Remember(r,"declare:"+e,true);K.news.unshift("⚔ "+r+" uzun değerlendirme sonrası "+e+" üzerine sefer başlattı.")}
+    if(v29WarScore(r,e)>=13&&setWar(r,e,true)){st.ap--;b.warTurns=0;v29Remember(r,"declare:"+e,true);K.news.unshift("⚔ "+r+" uzun değerlendirme sonrası "+e+" üzerine sefer başlattı.")}
  }
 
  /* Takviye kararı: kültürüne ve tehdide göre en zayıf/önemli orduya yatırım. */
@@ -1111,8 +1111,8 @@ v28AITurn=function(r){
  /* Savaş değerlendirmesi her tur yeniden yapılır; umutsuz savaşta çekil/barış. */
  var enemy=v286WarTarget(r);
  if(enemy){b.warTurns++;var ratio=v286Power(r)/Math.max(1,v286Power(enemy));
-   if(st.ap>0&&(ratio<.48||st.gold<7||v29StateEval(r).danger)){
-     setWar(r,enemy,false);st.ap--;v29Remember(r,"war:"+enemy,false);b.goal="defend";b.goalAge=0;
+    if(st.ap>0&&(ratio<.48||st.gold<7||v29StateEval(r).danger)&&v34TryPeace(r,enemy)){
+      st.ap--;v29Remember(r,"war:"+enemy,false);b.goal="defend";b.goalAge=0;
      K.news.unshift("🕊 "+r+" savaşın maliyetini yeniden değerlendirip "+enemy+" ile barış yaptı.");
    }
  }else b.peaceTurns++;
@@ -2305,6 +2305,192 @@ openDiplomacy=function(){
   note.textContent="🧭 "+d.name+" — "+d.goal+" Güncel değerlendirme: "+(p?p.e+" • "+p.v.reason:"Güvenli sınır hedefi yok")+".";
   heading.parentNode.insertBefore(note,heading.nextSibling)
  })
+};
+</script>
+<script>
+/* V36 — Sınır savunması, hedefe rota ve koşula bağlı savaş sonlandırma. */
+var V36_PLANS={};
+function v36Plan(r){return V36_PLANS[r]||(V36_PLANS[r]={mode:"savunma",target:null,enemy:null,turn:-1})}
+function v36Strength(u){return (u.soldiers||0)*(.65+(u.supply==null?70:u.supply)/220)*(.72+(u.morale==null?70:u.morale)/280)}
+function v36Defense(r,city){
+ return v31UnitsAt(r,city).reduce(function(n,u){return n+v36Strength(u)},0)
+}
+function v36BorderPriority(r,city){
+ var info=K.info[city]||{},t=(info.terrain||"")+" "+(info.type||"")+" "+city;
+ var adjacent=v28Neighbors(city).map(ownerOf).filter(function(o){return o&&o!==r&&!V28_DESTROYED[o]});
+ var danger=adjacent.reduce(function(n,o){
+  var value=v35Power(o)/Math.max(1,v35Power(r));
+  if(v331Authorized(r,o))value+=2;
+  return Math.max(n,value)
+ },0);
+ var doc=v35Doctrine(r),capital=v283Capital(r)===city;
+ return danger*18+(capital?12:0)+(doc.terrain.test(t)?7:0)+
+        (typeof PASS_CITIES!=="undefined"&&PASS_CITIES[city]?10:0)-v36Defense(r,city)*.35
+}
+function v36Target(r,e){
+ var options=[];
+ v283Owned(e).forEach(function(c){
+  if(!v28Neighbors(c.name).some(function(n){return ownerOf(n)===r}))return;
+  var info=K.info[c.name]||{},t=(info.terrain||"")+" "+(info.type||"")+" "+c.name;
+  var defense=v36Defense(e,c.name),value=12+(v35Doctrine(r).terrain.test(t)?10:0);
+  if(v283Capital(e)===c.name)value+=10;
+  if(typeof PASS_CITIES!=="undefined"&&PASS_CITIES[c.name])value+=12;
+  if(/liman|kale|büyük/i.test(t))value+=7;
+  options.push({city:c.name,score:value-defense*1.2})
+ });
+ options.sort(function(a,b){return b.score-a.score});
+ return options.length?options[0].city:null
+}
+function v36UpdatePlan(r){
+ var p=v36Plan(r);if(p.turn===K.turn)return p;
+ p.turn=K.turn;p.enemy=v286WarTarget(r);p.target=null;
+ var own=v283Owned(r).map(function(c){return c.name});
+ own.sort(function(a,b){return v36BorderPriority(r,b)-v36BorderPriority(r,a)});
+ var threatened=own[0]&&v36BorderPriority(r,own[0])>38;
+ if(p.enemy){
+  var ratio=v35Power(r)/Math.max(1,v35Power(p.enemy));
+  if(threatened&&ratio<1.15){p.mode="savunma";p.target=own[0]}
+  else{p.mode="sefer";p.target=v36Target(r,p.enemy)||own[0]}
+ }else{p.mode=threatened?"sınır savunması":"hazırlık";p.target=own[0]||v283Capital(r)}
+ return p
+}
+function v36NextStep(r,from,to){
+ if(!from||!to||from===to)return null;
+ var queue=[from],seen={};seen[from]=true;
+ for(var i=0;i<queue.length;i++){
+  var city=queue[i],neighbors=v28Neighbors(city);
+  for(var j=0;j<neighbors.length;j++){
+   var next=neighbors[j],owner=ownerOf(next);
+   if(seen[next]||!owner)continue;
+   /* Yalnız sahip olunan toprak, izinli koridor veya savaş hedefi kullanılır. */
+   if(owner!==r&&!(owner===ownerOf(to)&&v331Authorized(r,owner))&&!hasMilitaryAccess(r,owner))continue;
+   seen[next]=city;
+   if(next===to){
+    var step=next;while(seen[step]!==from)step=seen[step];
+    return step
+   }
+   queue.push(next)
+  }
+ }
+ return null
+}
+v28ChooseMove=function(r,u){
+ if(!u||!u.at||!v28Alive(r))return null;
+ var p=v36UpdatePlan(r),target=p.target;
+ if(!target)return null;
+ if(p.enemy&&p.mode==="sefer"){
+  /* Tek bir zayıf birliği kaleye sürme; takviyeyi kendi sınırında beklet. */
+  if(ownerOf(target)===p.enemy){
+   var defenders=v31UnitsAt(p.enemy,target),enemyPower=defenders.reduce(function(n,x){return n+v36Strength(x)},0);
+   var allies=v31UnitsAt(r,u.at).reduce(function(n,x){return n+v36Strength(x)},0);
+   var reserve=v283Owned(r).map(function(c){return c.name}).filter(function(c){return v28Neighbors(c).indexOf(target)>=0})[0];
+   if(enemyPower>allies*1.08&&reserve)target=reserve
+  }
+ }
+ var step=v36NextStep(r,u.at,target);
+ if(!step)return null;
+ var owner=ownerOf(step);
+ if(owner&&owner!==r&&v331Authorized(r,owner)){
+  var defend=v31UnitsAt(owner,step).reduce(function(n,x){return n+v36Strength(x)},0);
+  var attack=v31UnitsAt(r,u.at).reduce(function(n,x){return n+v36Strength(x)},0);
+  if(defend>attack*1.08)return null
+ }
+ return step
+};
+/* Tur başına tek plan: hareketler, diplomasi ve cephe kararı aynı durumu görür. */
+var v36PreviousAITurn=v28AITurn;
+v28AITurn=function(r){
+ if(!v28Alive(r))return;
+ v36UpdatePlan(r);
+ var was=v286WarTarget(r);
+ v36PreviousAITurn(r);
+ if(was!==v286WarTarget(r))v36Plan(r).turn=-1
+};
+v34TryPeace=function(a,b){
+ if(!v331Authorized(a,b))return false;
+ var s=v34S(a,b),elapsed=K.turn-(V331_WAR_AUTH[v331Key(a,b)]||{}).declaredTurn;
+ if(K.turn-s.lastPeaceOffer<3||elapsed<2)return false;
+ var d=v30D(a,b),ratio=v35Power(a)/Math.max(1,v35Power(b));
+ var losing=ratio<.55,exhausted=d.warFatigue>55;
+ var limitedGain=s.warScore<12&&elapsed>=5&&d.warFatigue>32;
+ if(!losing&&!exhausted&&!limitedGain)return false;
+ s.lastPeaceOffer=K.turn;
+ setWar(a,b,false);
+ s.stance="peace";s.warning=false;
+ d.warFatigue=Math.max(0,d.warFatigue-18);
+ return true
+};
+</script>
+<script>
+/* V37 — Oyuncunun görebildiği AI karar gerekçeleri ve kısa strateji günlüğü. */
+var V37_DECISIONS=[],V37_LAST={};
+function v37Safe(value){
+ return String(value==null?"":value).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]
+ })
+}
+function v37Snapshot(r){
+ var p=v36UpdatePlan(r),war=v286WarTarget(r),doc=v35Doctrine(r);
+ var summary=doc.name+" • "+p.mode+(p.target?" • "+p.target:"");
+ var reason="",watch="",key="";
+ if(war){
+  var ratio=v35Power(r)/Math.max(1,v35Power(war));
+  watch=war;
+  reason=p.mode==="savunma"
+   ?"Düşman baskısı yüksek; birlikler savunulacak sınıra yöneliyor."
+   :ratio<1.2
+    ?"Güçler yakın; ulaşılabilir hedefe ilerlerken takviye ve ikmal gözetiliyor."
+    :"Güç üstünlüğü var; ordular erişilebilir cephe hedefine ilerliyor.";
+  key="war|"+war+"|"+p.mode+"|"+p.target
+ }else{
+  var candidates=v35Neighbors(r).map(function(e){return {name:e,decision:v35WarDecision(r,e)}});
+  candidates.sort(function(a,b){return b.decision.score-a.decision.score});
+  var best=candidates[0];
+  if(best){
+   watch=best.name;
+   var crisis=v34S(r,best.name).warning;
+   reason=crisis?"Sınır krizi izleniyor; sonraki turda maliyet yeniden hesaplanacak."
+    :best.decision.score>=13?"Stratejik kazanç olası; önce diplomatik uyarı gerekiyor."
+    :best.decision.reason+"; sınır güvenliği ve hazırlık öncelikli.";
+   key="peace|"+p.mode+"|"+p.target+"|"+best.name+"|"+(crisis?"crisis":best.decision.reason)
+  }else{
+   reason="Ulaşılabilir düşman sınırı yok; iç güvenlik ve hazırlık öncelikli.";
+   key="peace|"+p.mode+"|"+p.target+"|none"
+  }
+ }
+ return {region:r,summary:summary,reason:reason,watch:watch,key:key,turn:K.turn}
+}
+function v37Record(r){
+ if(!v28Alive(r))return;
+ var entry=v37Snapshot(r),last=V37_LAST[r];
+ if(last&&last.key===entry.key)return;
+ V37_LAST[r]=entry;
+ V37_DECISIONS.unshift(entry);
+ if(V37_DECISIONS.length>48)V37_DECISIONS.length=48
+}
+var v37PreviousAITurn=v28AITurn;
+v28AITurn=function(r){
+ v37PreviousAITurn(r);
+ if(v28Alive(r))v37Record(r)
+};
+var v37PreviousWarsHTML=v33WarsHTML;
+v33WarsHTML=function(){
+ var h=v37PreviousWarsHTML(),rows=v283Regions().filter(function(r){return r!==K.playerRegion&&!V28_DESTROYED[r]});
+ var cards=rows.map(function(r){
+  var x=v37Snapshot(r);
+  return '<details style="padding:8px 0;border-bottom:1px solid #42516b"><summary><b>'+
+   v37Safe(r)+'</b> • '+v37Safe(x.summary)+'</summary><div class="small">'+
+   v37Safe(x.reason)+(x.watch?'<br>İlgili krallık: '+v37Safe(x.watch):'')+
+   '<br>Devlet doktrini: '+v37Safe(v35Doctrine(r).goal)+'</div></details>'
+ }).join("");
+ var history=V37_DECISIONS.slice(0,12).map(function(x){
+  return '<div class="small" style="padding:5px 0;border-bottom:1px solid #42516b">'+
+   'Tur '+x.turn+' • <b>'+v37Safe(x.region)+'</b> — '+v37Safe(x.summary)+
+   '<br>'+v37Safe(x.reason)+'</div>'
+ }).join("")||'<div class="small">İlk tur bitince karar geçmişi oluşacak.</div>';
+ return h+'<div class="card"><b>🧭 Krallıkların Stratejik Kararları</b>'+
+  '<div class="small">Güncel hedefi ve gerekçesini görmek için krallığa dokun.</div>'+
+  cards+'</div><div class="card"><b>📜 AI Karar Geçmişi</b>'+history+'</div>'
 };
 </script>
 </body></html>
