@@ -568,7 +568,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .hireCard{border:1px solid #6f6040;border-radius:8px;padding:7px;background:#172238}
 </style>
 <script>
-/* ===== KALDARYA V32.0 — tek ve temiz oyun çekirdeği ===== */
+/* ===== KALDARYA V32.1 — tek ve temiz oyun çekirdeği ===== */
 var V28_DESTROYED={};
 var V28_AI={};
 var V28_MARKET=[];
@@ -801,7 +801,7 @@ setTimeout(function(){
 
 
 <script>
-/* V32.0 — Kral Orduları ve genel çekirdek hata düzeltmesi */
+/* V32.1 — Kral Orduları ve genel çekirdek hata düzeltmesi */
 var V281_REL={};
 function v281EnsureKingArmies(){
  Object.keys(capitals).forEach(function(region){
@@ -858,7 +858,7 @@ v28AITurn=function(region){
  for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(region,units[j]);
  if(st.ap>0)v281Diplomacy(region);
 };
-setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V32.0 init",e)}},350);
+setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V32.1 init",e)}},350);
 </script>
 
 <script>
@@ -882,7 +882,7 @@ function v283HireGeneral(id){
  K.v283Market=K.v283Market.filter(function(x){return x.id!==id});if(typeof refreshTop==="function")refreshTop();say(c.name+" işe alındı • 8 askerlik General Ordusu kuruldu.")
 }
 function v283HireHTML(){return '<div class="card"><h3>⚔ General İşe Al</h3>'+v283Candidates().map(function(c){return '<div class="card"><b>'+c.name+'</b> • '+c.price+' altın<br><span class="small">Tecrübe '+c.exp+' • Yetenek '+c.skill+' • '+c.trait+'</span><br><button onclick="v283HireGeneral(\''+c.id+'\')">İşe Al</button></div>'}).join("")+'</div>'}
-/* V32.0: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
+/* V32.1: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
 
 function v283AIHire(r){var st=v28State(r),live=st.generals.filter(function(g){return g.alive&&!g.captured});if(live.length>=2||st.ap<=0)return false;
  var e=1+Math.floor(Math.random()*5),sk=1+Math.floor(Math.random()*5),price=10+e*4+sk*3,city=v283Capital(r);if(st.gold<price||!city)return false;st.gold-=price;st.ap--;
@@ -916,7 +916,7 @@ openCapital=function(tab){
  var body='<div class="row"><h2 style="flex:1">👑 Kaldarya Yönetim Merkezi</h2><button onclick="closePanel()">✕</button></div><div class="row tabs"><button onclick="openCapital(\'family\')">Aile Ağacı</button><button onclick="openDiplomacy()">Diplomasi</button><button onclick="openCapital(\'tax\')">Vergi Sistemi</button><button onclick="openPrison()">⛓ Hapishane</button></div>';
  body+=familyHTML()+v284ArmyAuditHTML();panel(body);
 };
-setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V32.0 king audit",e)}},1000);
+setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V32.1 king audit",e)}},1000);
 </script>
 
 
@@ -966,7 +966,7 @@ v28AITurn=function(r){if(!v28Alive(r))return;var st=v28State(r),own=v283Owned(r)
 </script>
 
 <script>
-/* ===== V32.0 — KÜLTÜREL, HAFIZALI, UYARLANAN STRATEJİK AI =====
+/* ===== V32.1 — KÜLTÜREL, HAFIZALI, UYARLANAN STRATEJİK AI =====
    Amaç: aynı hamleyi döndürmek yerine devlet karakteri + mevcut durum + geçmiş sonuçlar
    üzerinden her tur yeniden değerlendirme yapmak. */
 var V29_BRAIN={};
@@ -1122,7 +1122,7 @@ v28AITurn=function(r){
 </script>
 
 <script>
-/* ===== V32.0 — DERİN DİPLOMASİ ===== */
+/* ===== V32.1 — DERİN DİPLOMASİ ===== */
 var V30_DIP={};
 function v30Key(a,b){return [a,b].sort().join("||")}
 function v30D(a,b){
@@ -1282,7 +1282,7 @@ endTurn=function(){var z=v30OldEndTurn.apply(this,arguments);v30TurnRelations();
 setTimeout(v30Init,900);
 </script>
 <script>
-/* ===== V32.0 — ORDU vs ORDU SAHRA SAVAŞLARI ===== */
+/* ===== V32.1 — ORDU vs ORDU SAHRA SAVAŞLARI ===== */
 function v31Name(u,r){return (u&&u.name)||(u&&u.army)||(r+" Ordusu")}
 function v31AllUnits(r){
  var a=[],q=kingdomKings[r];
@@ -1357,7 +1357,7 @@ function v31PlayerAttack(u,to){
 }
 </script>
 <script>
-/* V32.0 — Bir şehirde savunma ordusu varsa şehir savaşsız ASLA fethedilemez. */
+/* V32.1 — Bir şehirde savunma ordusu varsa şehir savaşsız ASLA fethedilemez. */
 function v311UnitCity(u,r){
  if(!u)return null;
  /* Oyuncu Kral Ordusu eski sürümlerde at alanı taşımayabiliyor; gerçek konumu K.at. */
@@ -1390,7 +1390,7 @@ setOwner=function(city,newOwner,by,force){
  if(!force && old && newOwner!==old && atWar(newOwner,old)){
    var defenders=v311Defenders(old,city);
    if(defenders.length){
-     console.warn("V32.0: savunma ordusu varken fetih engellendi",city,old,newOwner);
+     console.warn("V32.1: savunma ordusu varken fetih engellendi",city,old,newOwner);
      return false;
    }
  }
@@ -1457,7 +1457,7 @@ v28MoveUnit=function(r,u){
 };
 </script>
 <script>
-/* ===== V32.0 — TEK KAYNAKLI GERÇEK ORDU SAVUNMASI ===== */
+/* ===== V32.1 — TEK KAYNAKLI GERÇEK ORDU SAVUNMASI ===== */
 function v312CityOf(u,r){
  if(!u)return null;
  if(r===K.playerRegion && (u===K.kingArmy || u.role==="king")) return K.at;
@@ -1572,7 +1572,7 @@ function v312DefenseText(city){
 }
 </script>
 <script>
-/* ===== V32.0 — ASKERÎ GEÇİŞ ≠ FETİH =====
+/* ===== V32.1 — ASKERÎ GEÇİŞ ≠ FETİH =====
    Dost/yabancı toprağa askerî geçiş anlaşmasıyla girilebilir,
    fakat savaş yoksa sahiplik ASLA değişmez. */
 function v313CanOccupy(attacker,owner){
@@ -1592,7 +1592,7 @@ setOwner=function(city,newOwner,by,force){
 
  /* Sadece açık savaş, isyan/özel devlet olayları veya açık sistem force'u sahiplik değiştirebilir. */
  if(force!=="STATE_EVENT" && !atWar(newOwner,old)){
-   console.warn("V32.0: barış/askerî geçiş sırasında fetih engellendi",city,newOwner,old);
+   console.warn("V32.1: barış/askerî geçiş sırasında fetih engellendi",city,newOwner,old);
    return false;
  }
  /* Savaşta bile savunma ordusu varsa savaş çözülmeden sahiplik değişmez. */
@@ -1643,7 +1643,7 @@ v29MoveScore=function(r,u,n,target){
 };
 </script>
 <script>
-/* ===== V32.0 — KURNAZ / FIRSATÇI / UZUN VADELİ AI ===== */
+/* ===== V32.1 — KURNAZ / FIRSATÇI / UZUN VADELİ AI ===== */
 var V32_PLAN={};
 function v32P(r){return V32_PLAN[r]||(V32_PLAN[r]={target:null,patience:0,retreat:0,feint:null,lastCities:{},reserve:null})}
 function v32BorderCities(r){
@@ -1728,6 +1728,103 @@ v28AITurn=function(r){
  /* Gereksiz aynı diplomasi hamlesini azalt, savaş sonrası hafızayı güçlendir. */
  if(p.target&&atWar(r,p.target))v29Remember(r,"campaign:"+p.target,true);
 };
-/* AI barışta askerî geçiş topraklarını sadece koridor olarak kullanır; V32.0 fetih kilidi korunur. */
+/* AI barışta askerî geçiş topraklarını sadece koridor olarak kullanır; V32.1 fetih kilidi korunur. */
+</script>
+<script>
+/* ===== V32.1 — BARIŞTA FETİH İÇİN KESİN MERKEZÎ KİLİT =====
+   Eski sürümlerden kalan raw setOwner referansları da bu kapıdan geçmek zorunda. */
+var V321_TRUE_SET_OWNER = (function(){
+  /* İlk gerçek sahiplik fonksiyonunun davranışını doğrudan burada uygularız;
+     böylece eski alias zincirleri güvenlik katmanını atlayamaz. */
+  return function(n,newOwner,by){
+    var st=settlements[n]; if(!st)return false;
+    var old=st.owner; if(old===newOwner)return false;
+    st.owner=newOwner;st.occupied=newOwner!==st.originalOwner;
+    st.status=st.occupied?("İşgal altında • "+newOwner):"Kontrol altında";
+    st.governor="Atanmamış";
+    K.news.unshift("Yıl "+K.year+" Ay "+K.month+": "+n+" • "+old+" → "+newOwner+".");
+    K.warHistory=K.warHistory||[];
+    K.warHistory.unshift({turn:K.turn,year:K.year,month:K.month,type:"fetih",city:n,from:old,to:newOwner,army:by||"Ordu"});
+    refreshTerritoryTint(n);
+    if(typeof captureGovernorIfEligible==="function")captureGovernorIfEligible(n,old,newOwner);
+    if(typeof v28RefreshPoliticalSurface==="function"){v28RefreshPoliticalSurface(old);v28RefreshPoliticalSurface(newOwner)}
+    return true;
+  };
+})();
+function v321OwnershipGate(city,newOwner,by,force){
+ var old=ownerOf(city);
+ if(!old||old===newOwner)return false;
+
+ /* İsyan/veraset gibi açık devlet olayı dışında BARIŞTA sahiplik değişemez. */
+ if(force==="STATE_EVENT")return V321_TRUE_SET_OWNER(city,newOwner,by);
+
+ if(!atWar(newOwner,old)){
+   console.warn("V32.1 BLOKE: savaş yokken fetih denemesi",newOwner,old,city,by);
+   return false;
+ }
+
+ /* Savaş olsa bile BATTLE_WON dışında savunucu ordu atlanamaz. */
+ var defs=(typeof v312Defenders==="function")?v312Defenders(old,city):[];
+ if(defs.length && force!=="BATTLE_WON")return false;
+
+ return V321_TRUE_SET_OWNER(city,newOwner,by);
+}
+setOwner=v321OwnershipGate;
+
+/* Eski kodların tuttuğu kaçak raw referansları da artık aynı güvenlik kapısıdır. */
+v311SetOwner=v321OwnershipGate;
+v312RawSetOwner=v321OwnershipGate;
+v313RawSetOwner=v321OwnershipGate;
+
+/* Savaş kazanımı bile yalnızca gerçekten savaş varsa geçerli. */
+var v321Battle=v312Battle;
+v312Battle=function(ar,attackers,dr,city){
+ if(!atWar(ar,dr)){
+   K.news.unshift("🛡 "+ar+" ordusu "+dr+" toprağında askerî geçiş kullanıyor; savaş olmadığı için fetih yapılamaz.");
+   return false;
+ }
+ return v321Battle(ar,attackers,dr,city);
+};
+v31Battle=function(ar,attackers,dr,defenders,city){return v312Battle(ar,attackers,dr,city)};
+
+/* Barış + geçişte AI yalnızca yürür. Bu fonksiyon hiçbir sahiplik komutu çağırmaz. */
+v28MoveUnit=function(r,u){
+ var st=v28State(r);if(!u||st.ap<=0)return false;
+ var to=v28ChooseMove(r,u);if(!to||to===u.at)return false;
+ var old=ownerOf(to),from=v312CityOf(u,r)||u.at;
+
+ if(old&&old!==r){
+   if(!v313CanTransit(r,old))return false;
+
+   if(!atWar(r,old)){
+     u.at=to;u.supply=Math.max(0,(u.supply||70)-2);v28MoveVisual(u);st.ap--;
+     return true; /* KRİTİK: burada setOwner YOK */
+   }
+
+   st.ap--;
+   var defs=v312Defenders(old,to);
+   if(defs.length){
+     var won=v312Battle(r,[u],old,to);
+     if(won){u.at=to;u.supply=Math.max(0,(u.supply||70)-3);v28MoveVisual(u)}
+     else{u.at=from;v28MoveVisual(u)}
+     return true;
+   }
+   u.at=to;u.supply=Math.max(0,(u.supply||70)-3);v28MoveVisual(u);
+   setOwner(to,r,v31Name(u,r),"BATTLE_WON");v28CheckDestroy(old);return true;
+ }
+ u.at=to;u.supply=Math.max(0,(u.supply||70)-2);v28MoveVisual(u);st.ap--;return true;
+};
+
+/* Kaldarya başlangıç geçişlerinin savaş olmadığını her tur doğrula. */
+function v321KaldaryaAccessIntegrity(){
+ [["Kaldarya Merkez","Kaldarya Batı"],["Kaldarya Merkez","Kaldarya Doğu"]].forEach(function(x){
+   if(!atWar(x[0],x[1])){v30D(x[0],x[1]).treaties.access=true;
+     if(x[0]===K.playerRegion){militaryAccess[x[1]]=true;if(treaties[x[1]])treaties[x[1]].access=true}
+   }
+ });
+}
+var v321EndTurn=endTurn;
+endTurn=function(){v321KaldaryaAccessIntegrity();var z=v321EndTurn.apply(this,arguments);v321KaldaryaAccessIntegrity();return z};
+setTimeout(v321KaldaryaAccessIntegrity,1000);
 </script>
 </body></html>
