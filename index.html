@@ -30,7 +30,16 @@ button,.stat{border:1px solid #64748b;border-radius:9px;background:#25334a;color
 @media(max-width:760px){.generalCorner{position:relative;left:auto;top:auto;width:auto;display:flex;gap:8px;overflow:auto}.treeWithGenerals{padding-left:0}.generalCard{min-width:150px}}
 
 .territoryTint{position:absolute;width:76px;height:76px;border-radius:0;transform:translate(-50%,-50%);pointer-events:none;z-index:2;opacity:1;mix-blend-mode:color;box-shadow:none;filter:saturate(1.18)}
-</style></head><body>
+</style>
+<style id="v284-unit-layout">
+.kingPawn{z-index:36!important;transform:translate(-50%,-175%)!important}
+.aiGeneralPawn{z-index:34!important;transform:translate(-105%,-70%)!important}
+.playerGeneralPawn{position:absolute;z-index:35;width:34px;height:34px;min-height:0;padding:0;border-radius:50%;
+border:2px solid #d7b96a;background:#2c2235;color:#ffe7a3;transform:translate(5%,-70%)!important;
+font-size:17px;box-shadow:0 0 10px #000;transition:left .45s,top .45s}
+</style>
+
+</head><body>
 <div id="bar"><span class="stat">Tur <b id="turn">1</b></span><span class="stat">Altın <b id="gold">1250</b></span><span class="stat">Erzak <b id="food">430</b></span>
 <button id="choose" onclick="chooseMode();return false;">🏰 Şehir Seç</button><button id="manage" onclick="openCapital();return false;">👑 Yönetim</button><button id="dip" onclick="openDiplomacy();return false;">🤝 Diplomasi</button><button onclick="openWarHistory();return false;">📜 Savaşlar</button><span class="stat">Konum: <b id="where">Sancaktepe</b></span>
 <button id="minus" onclick="zoomOut();return false;">−</button><button id="plus" onclick="zoomIn();return false;">＋</button><button id="end" onclick="endTurn();return false;">Turu Bitir</button></div>
@@ -559,7 +568,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .hireCard{border:1px solid #6f6040;border-radius:8px;padding:7px;background:#172238}
 </style>
 <script>
-/* ===== KALDARYA V28.3 — tek ve temiz oyun çekirdeği ===== */
+/* ===== KALDARYA V28.5 — tek ve temiz oyun çekirdeği ===== */
 var V28_DESTROYED={};
 var V28_AI={};
 var V28_MARKET=[];
@@ -734,17 +743,16 @@ function v28PlayerCandidate(i){
 function v28Market(){if(!V28_MARKET.length)V28_MARKET=[0,1,2].map(v28PlayerCandidate);return V28_MARKET}
 function v28ActivePlayerGenerals(){return generals.filter(function(g){return g.onDuty&&!g.dead&&!g.captured&&g.soldiers>0})}
 function v28CreatePlayerPawn(g,i){
- var c=K.info[g.at];if(!c)return;var b=document.createElement("button");b.className="kingPawn";b.textContent="⚔";b.title=g.name+" • "+g.army;b.style.left=c.x+"px";b.style.top=c.y+"px";
+ var c=K.info[g.at];if(!c)return;var b=document.createElement("button");b.className="playerGeneralPawn";b.textContent="⚔";b.title=g.name+" • "+g.army;b.style.left=c.x+"px";b.style.top=c.y+"px";
  b.onclick=function(e){e.stopPropagation();openGeneralArmy(i)};el("stage").appendChild(b);g.el=b;generalPawns.push(b);
 }
 function v28HirePlayer(i){
- var c=v28Market()[i];if(!c)return;if(v28ActivePlayerGenerals().length>=2){say("⚔ Aynı anda en fazla 2 aktif General Ordusu bulunabilir.");return}
- if(K.gold<c.price){say("💰 Bu generali işe almak için "+c.price+" altın gerekiyor.");return}
+ var c=v28Market()[i];if(!c)return;if(K.gold<c.price){say("💰 Bu generali işe almak için "+c.price+" altın gerekiyor.");return}
  K.gold-=c.price;var g={name:c.name,army:c.name+" Ordusu",role:"general",soldiers:8,onDuty:true,dead:false,captured:false,age:c.age,serviceTurns:0,battles:0,supply:70,morale:70,traits:c.traits,experience:c.experience,skill:c.skill,at:K.at};
  var slot=generals.findIndex(function(x){return !x.onDuty||x.dead||x.captured||x.soldiers<=0});if(slot>=0)generals[slot]=g;else{slot=generals.length;generals.push(g)}v28CreatePlayerPawn(g,slot);V28_MARKET=[];sync();say("⚔ "+g.name+" "+c.price+" altına işe alındı. <b>"+g.army+"</b> 8 askerle kuruldu.");openCapital("family");
 }
 function v28HireHTML(){
- var a=v28Market();return '<div class="hireBox"><b>➕ General İşe Al</b><div class="small">Aktif General Ordusu: '+v28ActivePlayerGenerals().length+'/2 • Ücret tecrübe ve beceriye göre 10–50 altın.</div><div class="hireGrid">'+a.map(function(c,i){return '<div class="hireCard"><b>'+c.name+'</b><br><span class="small">Yaş '+c.age+' • Tecrübe '+c.experience+'/10 • Beceri '+c.skill+'/10<br>'+c.traits.join(", ")+'</span><br><button onclick="v28HirePlayer('+i+')">İşe Al • '+c.price+' altın</button></div>'}).join("")+'</div></div>';
+ var a=v28Market();return '<div class="hireBox"><b>➕ General İşe Al</b><div class="small">Aktif General Ordusu: '+v28ActivePlayerGenerals().length+' • Ücret tecrübe ve beceriye göre 10–50 altın.</div><div class="hireGrid">'+a.map(function(c,i){return '<div class="hireCard"><b>'+c.name+'</b><br><span class="small">Yaş '+c.age+' • Tecrübe '+c.experience+'/10 • Beceri '+c.skill+'/10<br>'+c.traits.join(", ")+'</span><br><button onclick="v28HirePlayer('+i+')">İşe Al • '+c.price+' altın</button></div>'}).join("")+'</div></div>';
 }
 var V28_oldFamilyHTML=familyHTML;
 familyHTML=function(){
@@ -793,7 +801,7 @@ setTimeout(function(){
 
 
 <script>
-/* V28.3 — Kral Orduları ve genel çekirdek hata düzeltmesi */
+/* V28.5 — Kral Orduları ve genel çekirdek hata düzeltmesi */
 var V281_REL={};
 function v281EnsureKingArmies(){
  Object.keys(capitals).forEach(function(region){
@@ -850,7 +858,7 @@ v28AITurn=function(region){
  for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(region,units[j]);
  if(st.ap>0)v281Diplomacy(region);
 };
-setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V28.3 init",e)}},350);
+setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V28.5 init",e)}},350);
 </script>
 
 <script>
@@ -866,15 +874,15 @@ function v283EnsureKing(r){
 function v283EnsureAllKings(){v283Regions().forEach(v283EnsureKing)}
 function v283Candidates(){if(!K.v283Market){K.v283Market=["Aras","Boran","Taren","Demir"].map(function(n,i){var e=2+i,s=1+(i%3);return{id:"v283_"+i,name:n,exp:e,skill:s,price:10+e*4+s*3,trait:["Disiplinli","İkmalci","Saldırgan","Savunmacı"][i]}})}return K.v283Market}
 function v283HireGeneral(id){
- var c=v283Candidates().find(function(x){return x.id===id});if(!c)return msg("Aday bulunamadı.");
- if(K.gold<c.price)return msg("Yeterli altın yok.");if(K.actionPoints<=0)return msg("Eylem puanın kalmadı.");
- var at=K.at,ci=K.info[at];if(!ci)return msg("Başlangıç şehri bulunamadı.");
- K.gold-=c.price;K.actionPoints--;var g={name:c.name,army:c.name+" Ordusu",role:"general",soldiers:8,at:at,onDuty:true,dead:false,captured:false,exp:c.exp,skill:c.skill,trait:c.trait,supply:80,morale:75,battles:0};
- generals.push(g);var b=document.createElement("button");b.className="generalPawn";b.textContent="⚔";b.title=c.name+" • 8 asker";el("stage").appendChild(b);g.el=b;v28MoveVisual(g);
- K.v283Market=K.v283Market.filter(function(x){return x.id!==id});if(typeof refreshTop==="function")refreshTop();msg(c.name+" işe alındı • 8 askerlik General Ordusu kuruldu.")
+ var c=v283Candidates().find(function(x){return x.id===id});if(!c)return say("Aday bulunamadı.");
+ if(K.gold<c.price)return say("Yeterli altın yok.");
+ var at=K.at,ci=K.info[at];if(!ci)return say("Başlangıç şehri bulunamadı.");
+ K.gold-=c.price;var g={name:c.name,army:c.name+" Ordusu",role:"general",soldiers:8,at:at,onDuty:true,dead:false,captured:false,exp:c.exp,skill:c.skill,trait:c.trait,supply:80,morale:75,battles:0};
+ generals.push(g);var b=document.createElement("button");b.className="playerGeneralPawn";b.textContent="⚔";b.title=c.name+" • 8 asker";var gi=generals.length-1;b.onclick=function(e){e.stopPropagation();openGeneralArmy(gi)};el("stage").appendChild(b);g.el=b;generalPawns.push(b);v28MoveVisual(g);
+ K.v283Market=K.v283Market.filter(function(x){return x.id!==id});if(typeof refreshTop==="function")refreshTop();say(c.name+" işe alındı • 8 askerlik General Ordusu kuruldu.")
 }
 function v283HireHTML(){return '<div class="card"><h3>⚔ General İşe Al</h3>'+v283Candidates().map(function(c){return '<div class="card"><b>'+c.name+'</b> • '+c.price+' altın<br><span class="small">Tecrübe '+c.exp+' • Yetenek '+c.skill+' • '+c.trait+'</span><br><button onclick="v283HireGeneral(\''+c.id+'\')">İşe Al</button></div>'}).join("")+'</div>'}
-var v283Family=familyHTML;familyHTML=function(){return v283Family()+'<hr>'+v283HireHTML()};
+/* V28.5: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
 
 function v283AIHire(r){var st=v28State(r),live=st.generals.filter(function(g){return g.alive&&!g.captured});if(live.length>=2||st.ap<=0)return false;
  var e=1+Math.floor(Math.random()*5),sk=1+Math.floor(Math.random()*5),price=10+e*4+sk*3,city=v283Capital(r);if(st.gold<price||!city)return false;st.gold-=price;st.ap--;
@@ -893,4 +901,54 @@ v28AITurn=function(r){if(!v28Alive(r))return;var st=v28State(r),own=v283Owned(r)
  for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(r,units[j]);if(st.ap>0&&typeof v281Diplomacy==="function")v281Diplomacy(r)};
 setTimeout(function(){v283EnsureAllKings();v28InitAIArmies();v283EnsureAllKings()},700);
 </script>
+
+<script>
+function v284ArmyAuditHTML(){
+ var rows=v283Regions().filter(function(r){return r!==K.playerRegion}).map(function(r){
+   var q=kingdomKings[r],st=V28_AI[r],gc=st?st.generals.filter(function(g){return g.alive&&!g.captured}).length:0;
+   return '<div class="small"><b>'+r+'</b>: '+(q&&q.alive!==false&&q.soldiers>0?'♚ Kral Ordusu '+q.soldiers+' asker':'❌ Kral Ordusu yok')+' • ⚔ '+gc+' General Ordusu</div>';
+ }).join('');
+ return '<div class="card"><b>🧭 Dünya Ordu Kontrolü</b>'+rows+'</div>';
+}
+var v284OpenCapital=openCapital;
+openCapital=function(tab){
+ if(tab!=="family")return v284OpenCapital(tab);
+ var body='<div class="row"><h2 style="flex:1">👑 Kaldarya Yönetim Merkezi</h2><button onclick="closePanel()">✕</button></div><div class="row tabs"><button onclick="openCapital(\'family\')">Aile Ağacı</button><button onclick="openDiplomacy()">Diplomasi</button><button onclick="openCapital(\'tax\')">Vergi Sistemi</button><button onclick="openPrison()">⛓ Hapishane</button></div>';
+ body+=familyHTML()+v284ArmyAuditHTML();panel(body);
+};
+setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V28.5 king audit",e)}},1000);
+</script>
+
+
+<style id="v285-flags">
+.kingdomFlagPawn{font-size:20px!important;line-height:28px!important;text-align:center!important;
+text-shadow:0 1px 2px #000!important;border:2px solid #e6cf8b!important}
+</style>
+<script>
+function v285Flag(r){
+ var F={
+ "Kaldarya Merkez":"⚑","Kaldarya Batı":"🟩","Kaldarya Doğu":"🟥",
+ "Aerion":"🔵","Valdor":"🟨","Eldoria":"🌿","Vardun":"🟧",
+ "Drakmir":"🐉","Zafran":"☀️","Lunaris":"🌙","Thalgrim":"❄️"
+ };
+ return F[r]||"⚑";
+}
+function v285ApplyGeneralFlags(){
+ Object.keys(V28_AI).forEach(function(r){
+   (V28_AI[r].generals||[]).forEach(function(g){
+     if(g.el){g.el.classList.add("kingdomFlagPawn");g.el.dataset.region=r;g.el.textContent=v285Flag(r);
+       g.el.title=r+" • "+g.name+" • "+g.soldiers+" asker";}
+   });
+ });
+ generals.forEach(function(g){
+   if(g.el){g.el.classList.add("kingdomFlagPawn");g.el.dataset.region=K.playerRegion;g.el.textContent=v285Flag(K.playerRegion);}
+ });
+}
+var v285OldInit=v28InitAIArmies;
+v28InitAIArmies=function(){var z=v285OldInit.apply(this,arguments);v285ApplyGeneralFlags();return z};
+var v285OldAIHire=v28AIHire;
+v28AIHire=function(r){var z=v285OldAIHire.apply(this,arguments);v285ApplyGeneralFlags();return z};
+setTimeout(v285ApplyGeneralFlags,1200);
+</script>
+
 </body></html>
