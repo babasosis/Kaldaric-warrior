@@ -568,7 +568,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .hireCard{border:1px solid #6f6040;border-radius:8px;padding:7px;background:#172238}
 </style>
 <script>
-/* ===== KALDARYA V28.5 — tek ve temiz oyun çekirdeği ===== */
+/* ===== KALDARYA V29.0 — tek ve temiz oyun çekirdeği ===== */
 var V28_DESTROYED={};
 var V28_AI={};
 var V28_MARKET=[];
@@ -801,7 +801,7 @@ setTimeout(function(){
 
 
 <script>
-/* V28.5 — Kral Orduları ve genel çekirdek hata düzeltmesi */
+/* V29.0 — Kral Orduları ve genel çekirdek hata düzeltmesi */
 var V281_REL={};
 function v281EnsureKingArmies(){
  Object.keys(capitals).forEach(function(region){
@@ -858,7 +858,7 @@ v28AITurn=function(region){
  for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(region,units[j]);
  if(st.ap>0)v281Diplomacy(region);
 };
-setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V28.5 init",e)}},350);
+setTimeout(function(){try{v281EnsureKingArmies();v28InitAIArmies()}catch(e){console.error("V29.0 init",e)}},350);
 </script>
 
 <script>
@@ -882,7 +882,7 @@ function v283HireGeneral(id){
  K.v283Market=K.v283Market.filter(function(x){return x.id!==id});if(typeof refreshTop==="function")refreshTop();say(c.name+" işe alındı • 8 askerlik General Ordusu kuruldu.")
 }
 function v283HireHTML(){return '<div class="card"><h3>⚔ General İşe Al</h3>'+v283Candidates().map(function(c){return '<div class="card"><b>'+c.name+'</b> • '+c.price+' altın<br><span class="small">Tecrübe '+c.exp+' • Yetenek '+c.skill+' • '+c.trait+'</span><br><button onclick="v283HireGeneral(\''+c.id+'\')">İşe Al</button></div>'}).join("")+'</div>'}
-/* V28.5: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
+/* V29.0: eski ikinci işe-al paneli devre dışı; tek sistem v28HirePlayer */
 
 function v283AIHire(r){var st=v28State(r),live=st.generals.filter(function(g){return g.alive&&!g.captured});if(live.length>=2||st.ap<=0)return false;
  var e=1+Math.floor(Math.random()*5),sk=1+Math.floor(Math.random()*5),price=10+e*4+sk*3,city=v283Capital(r);if(st.gold<price||!city)return false;st.gold-=price;st.ap--;
@@ -916,7 +916,7 @@ openCapital=function(tab){
  var body='<div class="row"><h2 style="flex:1">👑 Kaldarya Yönetim Merkezi</h2><button onclick="closePanel()">✕</button></div><div class="row tabs"><button onclick="openCapital(\'family\')">Aile Ağacı</button><button onclick="openDiplomacy()">Diplomasi</button><button onclick="openCapital(\'tax\')">Vergi Sistemi</button><button onclick="openPrison()">⛓ Hapishane</button></div>';
  body+=familyHTML()+v284ArmyAuditHTML();panel(body);
 };
-setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V28.5 king audit",e)}},1000);
+setTimeout(function(){try{v283EnsureAllKings()}catch(e){console.error("V29.0 king audit",e)}},1000);
 </script>
 
 
@@ -949,6 +949,176 @@ v28InitAIArmies=function(){var z=v285OldInit.apply(this,arguments);v285ApplyGene
 var v285OldAIHire=v28AIHire;
 v28AIHire=function(r){var z=v285OldAIHire.apply(this,arguments);v285ApplyGeneralFlags();return z};
 setTimeout(v285ApplyGeneralFlags,1200);
+</script>
+
+<script>
+function v286Power(r){var p=0,q=kingdomKings[r];if(q&&q.alive!==false)p+=q.soldiers||0;var st=V28_AI[r];if(st)(st.generals||[]).forEach(function(g){if(g.alive&&!g.captured)p+=g.soldiers||0});return p}
+function v286Borders(r){var m={};v283Owned(r).forEach(function(c){v28Neighbors(c.name).forEach(function(n){var o=ownerOf(n);if(o&&o!==r&&!V28_DESTROYED[o])m[o]=1})});return Object.keys(m)}
+function v286WarTarget(r){var a=v283Regions().filter(function(x){return x!==r&&atWar(r,x)&&!V28_DESTROYED[x]});a.sort(function(x,y){return v286Power(x)+v283Owned(x).length*2-v286Power(y)-v283Owned(y).length*2});return a[0]||null}
+function v286ChooseWar(r){var st=v28State(r),mine=v286Power(r);if(st.gold<28||mine<16)return null;var a=v286Borders(r),best=null,bs=-999;a.forEach(function(x){var sc=(mine-v286Power(x))*2+(8-Math.min(8,v283Owned(x).length))*3;if(sc>bs){bs=sc;best=x}});return bs>3?best:null}
+function v286Dist(r,from,target){var seen={},q=[{c:from,d:0}];seen[from]=1;while(q.length){var x=q.shift();if(ownerOf(x.c)===target)return x.d;v28Neighbors(x.c).forEach(function(n){var o=ownerOf(n);if(!seen[n]&&(o===r||o===target||atWar(r,o)||hasMilitaryAccess(r,o))){seen[n]=1;q.push({c:n,d:x.d+1})}})}return 99}
+function v286Score(r,u,n,t){var o=ownerOf(n),z=0;if(t){z+=(v286Dist(r,u.at,t)-v286Dist(r,n,t))*20;if(o===t)z+=35}if(typeof PASS_CITIES!=="undefined"&&PASS_CITIES[n])z+=8;var c=K.info[n];if(c&&/Başkent|Büyük|Kale/i.test(c.type||""))z+=8;if((u.supply||70)<30&&o===r)z+=30;return z}
+v28ChooseMove=function(r,u){var t=v286WarTarget(r),a=v28Neighbors(u.at).filter(function(n){return v28CanEnter(r,n)});a.sort(function(x,y){return v286Score(r,u,y,t)-v286Score(r,u,x,t)});return a[0]||null};
+function v286Defs(r,city){var a=[],q=kingdomKings[r];if(q&&q.alive!==false&&q.at===city&&q.soldiers>0)a.push(q);var st=V28_AI[r];if(st)(st.generals||[]).forEach(function(g){if(g.alive&&!g.captured&&g.at===city&&g.soldiers>0)a.push(g)});if(r===K.playerRegion){if(K.at===city&&K.kingArmy.soldiers>0)a.push(K.kingArmy);generals.forEach(function(g){if(g.onDuty&&!g.dead&&!g.captured&&g.at===city&&g.soldiers>0)a.push(g)})}return a}
+function v286Battle(ar,u,dr,city){var ds=v286Defs(dr,city),d=ds[0];if(!d){setOwner(city,ar,u.name||u.army);v28CheckDestroy(dr);return true}var ap=(u.soldiers||0)*(0.75+(u.morale||70)/200)*(0.8+(u.supply||70)/250),dp=(d.soldiers||0)*(0.82+(d.morale||70)/190)*(0.82+(d.supply||70)/240);if(typeof PASS_CITIES!=="undefined"&&PASS_CITIES[city])dp*=1.18;var al=Math.max(1,Math.ceil((d.soldiers||0)*(0.28+Math.random()*.22))),dl=Math.max(1,Math.ceil((u.soldiers||0)*(0.24+Math.random()*.22)));if(ap>=dp){u.soldiers=Math.max(1,u.soldiers-dl);d.soldiers=Math.max(0,d.soldiers-al)}else{u.soldiers=Math.max(0,u.soldiers-dl);d.soldiers=Math.max(1,d.soldiers-al)}if(d.soldiers<=0){d.alive=false;if(d.el)d.el.style.display="none";setOwner(city,ar,u.name||u.army);if(d.role==="king")v28Succession(dr);v28CheckDestroy(dr);K.news.unshift("⚔ "+ar+" "+city+" savaşını kazandı.");return true}if(u.soldiers<=0){u.alive=false;if(u.el)u.el.style.display="none";K.news.unshift("🛡 "+dr+" "+city+" savunmasını kazandı.")}return false}
+v28MoveUnit=function(r,u){var st=v28State(r);if(!u||st.ap<=0)return false;var to=v28ChooseMove(r,u);if(!to||to===u.at)return false;var old=ownerOf(to);u.at=to;u.supply=Math.max(0,(u.supply||70)-3);v28MoveVisual(u);st.ap--;if(old&&old!==r&&atWar(r,old))v286Battle(r,u,old,to);return true};
+v28AITurn=function(r){if(!v28Alive(r))return;var st=v28State(r),own=v283Owned(r);if(!own.length){v28CheckDestroy(r);return}v283EnsureKing(r);st.turns++;st.ap=3;st.gold+=own.length;var q=kingdomKings[r],units=[];if(q&&q.alive!==false&&q.soldiers>0)units.push(q);st.generals.forEach(function(g){if(g.alive&&!g.captured&&g.soldiers>0)units.push(g)});units.forEach(function(u){var up=armyUpkeep(u.soldiers);if(st.gold>=up){st.gold-=up;u.supply=Math.min(100,(u.supply||70)+4)}else{u.supply=Math.max(0,(u.supply||70)-9);u.morale=Math.max(0,(u.morale||70)-6)}});while(st.ap>0&&st.generals.filter(function(g){return g.alive&&!g.captured}).length<2){if(!v28AIHire(r))break}if(!v286WarTarget(r)&&st.ap>0){var t=v286ChooseWar(r);if(t){setWar(r,t,true);st.ap--;K.news.unshift("⚔ "+r+" stratejik hedef olarak "+t+" krallığına savaş ilan etti.")}}units=[];q=kingdomKings[r];if(q&&q.alive!==false&&q.soldiers>0)units.push(q);st.generals.forEach(function(g){if(g.alive&&!g.captured&&g.soldiers>0)units.push(g)});for(var i=0;i<units.length&&st.ap>0;i++)if(units[i].soldiers<10&&st.gold>=8)v28Recruit(r,units[i]);units.sort(function(a,b){return (b.soldiers||0)-(a.soldiers||0)});for(var j=0;j<units.length&&st.ap>0;j++)v28MoveUnit(r,units[j]);var e=v286WarTarget(r);if(e&&st.ap>0&&(st.gold<10||v286Power(r)<7)){setWar(r,e,false);st.ap--;K.news.unshift("🕊 "+r+" ağır kayıplar sonrası "+e+" ile barış yaptı.")}};
+</script>
+
+<script>
+/* ===== V29.0 — KÜLTÜREL, HAFIZALI, UYARLANAN STRATEJİK AI =====
+   Amaç: aynı hamleyi döndürmek yerine devlet karakteri + mevcut durum + geçmiş sonuçlar
+   üzerinden her tur yeniden değerlendirme yapmak. */
+var V29_BRAIN={};
+
+var V29_CULTURE={
+ "Kaldarya Batı":{style:"orman-sınır",aggr:.42,caution:.70,econ:.68,pass:.88,def:.78,expand:.48},
+ "Kaldarya Doğu":{style:"doğu-sınır",aggr:.64,caution:.58,econ:.52,pass:.82,def:.72,expand:.66},
+ "Kaldarya Merkez":{style:"merkez",aggr:.52,caution:.62,econ:.70,pass:.70,def:.70,expand:.55},
+ "Aerion":{style:"denizci-disiplinli",aggr:.52,caution:.66,econ:.72,pass:.55,def:.62,expand:.58},
+ "Valdor":{style:"ticaretçi",aggr:.38,caution:.72,econ:.90,pass:.52,def:.64,expand:.42},
+ "Eldoria":{style:"orman-savunmacı",aggr:.34,caution:.82,econ:.72,pass:.72,def:.92,expand:.38},
+ "Vardun":{style:"bozkır-akıncı",aggr:.82,caution:.38,econ:.44,pass:.66,def:.42,expand:.88},
+ "Drakmir":{style:"saldırgan",aggr:.88,caution:.34,econ:.40,pass:.58,def:.48,expand:.90},
+ "Zafran":{style:"çöl-ticaret",aggr:.48,caution:.68,econ:.84,pass:.80,def:.62,expand:.56},
+ "Lunaris":{style:"temkinli-mistik",aggr:.30,caution:.88,econ:.76,pass:.58,def:.84,expand:.34},
+ "Thalgrim":{style:"dağ-savunma",aggr:.46,caution:.82,econ:.52,pass:.96,def:.98,expand:.40}
+};
+function v29Culture(r){return V29_CULTURE[r]||{style:"karma",aggr:.5,caution:.6,econ:.6,pass:.65,def:.65,expand:.5}}
+function v29Brain(r){
+ if(!V29_BRAIN[r])V29_BRAIN[r]={turn:0,lastActions:[],fail:{},success:{},enemy:{},goal:null,goalAge:0,peaceTurns:0,warTurns:0,lastPower:0,lastGold:0};
+ return V29_BRAIN[r]
+}
+function v29Remember(r,key,ok){
+ var b=v29Brain(r),bag=ok?b.success:b.fail;bag[key]=(bag[key]||0)+1;
+ b.lastActions.push(key);if(b.lastActions.length>8)b.lastActions.shift()
+}
+function v29RepeatPenalty(r,key){
+ var a=v29Brain(r).lastActions,n=0;for(var i=0;i<a.length;i++)if(a[i]===key)n++;
+ return n*7
+}
+function v29TerrainAffinity(r,city){
+ var c=K.info[city],t=((c&&c.terrain)||"")+" "+((c&&c.type)||""),cu=v29Culture(r),z=0;
+ if(cu.style.indexOf("orman")>=0&&/orman|yeşil/i.test(t))z+=8;
+ if(cu.style.indexOf("dağ")>=0&&/dağ|geçit|kale/i.test(t))z+=10;
+ if(cu.style.indexOf("çöl")>=0&&/çöl|kum|sıcak/i.test(t))z+=9;
+ if(cu.style.indexOf("bozkır")>=0&&/bozkır|ova/i.test(t))z+=8;
+ if(cu.style.indexOf("deniz")>=0&&/kıyı|liman|ada/i.test(t))z+=7;
+ return z
+}
+function v29Threat(r){
+ var threat=0;
+ v283Owned(r).forEach(function(c){v28Neighbors(c.name).forEach(function(n){var o=ownerOf(n);if(o&&o!==r&&atWar(r,o))threat+=v286Power(o)})});
+ return threat
+}
+function v29StateEval(r){
+ var st=v28State(r),cu=v29Culture(r),power=v286Power(r),land=v283Owned(r).length,threat=v29Threat(r);
+ return {gold:st.gold,power:power,land:land,threat:threat,
+  weak:power<14||st.gold<12,rich:st.gold>45,strong:power>24,
+  danger:threat>power*1.15,culture:cu}
+}
+function v29WarScore(r,e){
+ var me=v29StateEval(r),b=v29Brain(r),cu=me.culture,ep=v286Power(e),eland=v283Owned(e).length;
+ var border=v286Borders(r).indexOf(e)>=0?14:0;
+ var score=(me.power-ep)*1.8+(me.gold-20)*.18+(8-Math.min(8,eland))*2.5+border;
+ score+=cu.aggr*18+cu.expand*15-cu.caution*8;
+ score-=(b.fail["war:"+e]||0)*8;score+=(b.success["war:"+e]||0)*4;
+ if(me.danger)score-=28;if(me.weak)score-=22;
+ return score
+}
+function v29ChooseEnemy(r){
+ var a=v286Borders(r),best=null,bs=-999;
+ a.forEach(function(e){if(!V28_DESTROYED[e]){var z=v29WarScore(r,e);if(z>bs){bs=z;best=e}}});
+ return bs>12?best:null
+}
+function v29Goal(r){
+ var b=v29Brain(r),me=v29StateEval(r),war=v286WarTarget(r);
+ if(war){b.goal="war:"+war;b.goalAge++;return b.goal}
+ b.goalAge++;
+ if(b.goal&&b.goalAge<3&&!me.danger)return b.goal;
+ b.goalAge=0;
+ if(me.danger)b.goal="defend";
+ else if(me.gold<25)b.goal="economy";
+ else if(me.power<18)b.goal="army";
+ else {var e=v29ChooseEnemy(r);b.goal=e?"war:"+e:(me.gold>55?"army":"economy")}
+ return b.goal
+}
+function v29MoveScore(r,u,n,target){
+ var o=ownerOf(n),me=v29StateEval(r),cu=me.culture,z=0;
+ if(target){var before=v286Dist(r,u.at,target),after=v286Dist(r,n,target);z+=(before-after)*18;if(o===target)z+=30}
+ if(o===r)z+=me.danger?12:2;
+ if(typeof PASS_CITIES!=="undefined"&&PASS_CITIES[n])z+=cu.pass*14;
+ z+=v29TerrainAffinity(r,n);
+ var defs=o&&o!==r?v286Defs(o,n):[];
+ if(defs.length){var dp=0;defs.forEach(function(x){dp+=x.soldiers||0});z+=(u.soldiers-dp)*2.2;if(dp>u.soldiers*1.35)z-=35*cu.caution}
+ if((u.supply||70)<35&&o===r)z+=28;
+ z-=v29RepeatPenalty(r,"move:"+n);
+ return z
+}
+v28ChooseMove=function(r,u){
+ var goal=v29Goal(r),target=goal.indexOf("war:")===0?goal.slice(4):v286WarTarget(r);
+ var a=v28Neighbors(u.at).filter(function(n){return v28CanEnter(r,n)});
+ if(!a.length)return null;
+ a.sort(function(x,y){return v29MoveScore(r,u,y,target)-v29MoveScore(r,u,x,target)});
+ return a[0]
+};
+
+var v29BattleBase=v286Battle;
+v286Battle=function(ar,u,dr,city){
+ var before=u.soldiers||0,result=v29BattleBase(ar,u,dr,city);
+ v29Remember(ar,"battle:"+dr,!!result);v29Remember(ar,"move:"+city,!!result);
+ if(result)v29Remember(ar,"war:"+dr,true);else if((u.soldiers||0)<before*.55)v29Remember(ar,"war:"+dr,false);
+ return result
+};
+
+v28AITurn=function(r){
+ if(!v28Alive(r))return;
+ var st=v28State(r),own=v283Owned(r);if(!own.length){v28CheckDestroy(r);return}
+ v283EnsureKing(r);var b=v29Brain(r),me=v29StateEval(r),goal=v29Goal(r);
+ b.turn++;st.turns++;st.ap=3;st.gold+=own.length;
+
+ var q=kingdomKings[r],units=[];
+ if(q&&q.alive!==false&&q.soldiers>0)units.push(q);
+ st.generals.forEach(function(g){if(g.alive&&!g.captured&&g.soldiers>0)units.push(g)});
+ units.forEach(function(u){var up=armyUpkeep(u.soldiers);if(st.gold>=up){st.gold-=up;u.supply=Math.min(100,(u.supply||70)+4)}else{u.supply=Math.max(0,(u.supply||70)-10);u.morale=Math.max(0,(u.morale||70)-7)}});
+
+ /* General kaybını tamamla; fakat ekonomi çökmüşse bütün AP'yi işe almaya harcama. */
+ if(st.generals.filter(function(g){return g.alive&&!g.captured}).length<2&&st.gold>=18&&st.ap>0)v28AIHire(r);
+
+ me=v29StateEval(r);goal=v29Goal(r);
+ /* Barış döneminde kültür ve durumuna göre savaş kararı. */
+ if(!v286WarTarget(r)&&goal.indexOf("war:")===0&&st.ap>0){
+   var e=goal.slice(4);
+   if(v29WarScore(r,e)>12){setWar(r,e,true);st.ap--;b.warTurns=0;v29Remember(r,"declare:"+e,true);K.news.unshift("⚔ "+r+" uzun değerlendirme sonrası "+e+" üzerine sefer başlattı.")}
+ }
+
+ /* Takviye kararı: kültürüne ve tehdide göre en zayıf/önemli orduya yatırım. */
+ units=[];q=kingdomKings[r];if(q&&q.alive!==false&&q.soldiers>0)units.push(q);
+ st.generals.forEach(function(g){if(g.alive&&!g.captured&&g.soldiers>0)units.push(g)});
+ units.sort(function(a,b){return (a.soldiers||0)-(b.soldiers||0)});
+ if(st.ap>0&&st.gold>=8&&(goal==="army"||goal==="defend"||goal.indexOf("war:")===0)){
+   var need=units.find(function(u){return u.soldiers<12});
+   if(need){v28Recruit(r,need);v29Remember(r,"recruit",true)}
+ }
+
+ /* Hareket: aynı şehir döngülerini cezalandır, hedefe yaklaşan hamleyi ödüllendir. */
+ units.sort(function(a,b){return (b.soldiers||0)-(a.soldiers||0)});
+ for(var i=0;i<units.length&&st.ap>0;i++){
+   var old=units[i].at;
+   if(v28MoveUnit(r,units[i]))v29Remember(r,"move:"+units[i].at,units[i].at!==old)
+ }
+
+ /* Savaş değerlendirmesi her tur yeniden yapılır; umutsuz savaşta çekil/barış. */
+ var enemy=v286WarTarget(r);
+ if(enemy){b.warTurns++;var ratio=v286Power(r)/Math.max(1,v286Power(enemy));
+   if(st.ap>0&&(ratio<.48||st.gold<7||v29StateEval(r).danger)){
+     setWar(r,enemy,false);st.ap--;v29Remember(r,"war:"+enemy,false);b.goal="defend";b.goalAge=0;
+     K.news.unshift("🕊 "+r+" savaşın maliyetini yeniden değerlendirip "+enemy+" ile barış yaptı.");
+   }
+ }else b.peaceTurns++;
+
+ b.lastPower=v286Power(r);b.lastGold=st.gold;
+};
 </script>
 
 </body></html>
