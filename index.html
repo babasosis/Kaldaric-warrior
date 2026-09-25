@@ -2556,13 +2556,13 @@ v283Regions=function(){
  Object.keys(capitals).forEach(function(r){if(rs.indexOf(r)<0&&!V28_DESTROYED[r]&&v283Owned(r).length)rs.push(r)});
  return rs
 };
-function v38Fragment(parent,st,deadCity){
+function v38Fragment(parent,st,deadCity,maxCities){
  var own=v283Owned(parent);
  if(own.length<3)return null;
  var candidates=own.filter(function(c){return c.name!==capitals[parent]&&c.name!==deadCity});
  if(!candidates.length)candidates=own.filter(function(c){return c.name!==capitals[parent]});
  if(!candidates.length)return null;
- var count=Math.min(candidates.length,Math.max(1,Math.floor(own.length/3)));
+ var count=Math.min(candidates.length,maxCities||Math.max(1,Math.floor(own.length/3)));
  var rebel=v38RebelRegion(parent),taken=candidates.slice(-count);
  capitals[rebel]=taken[0].name;
  politicalStatus[rebel]={kind:"Bağımsız Krallık",overlord:null,culture:statusOf(parent).culture};
@@ -3331,44 +3331,55 @@ function v45Famine(region,state,need,production){
  var armies=v45Armies(region),available=Math.max(0,state.food||0)+production;
  var shortage=Math.max(0,need-available);
  state.food=Math.max(0,available-need);
- var warning=need>0&&state.food<need*2;
+ var deficit=Math.max(0,need-production),turnsLeft=deficit?Math.floor(state.food/deficit):Infinity;
+ var warning=need>0&&(shortage>0||state.food<need*2);
  state.famineTurns=shortage?(state.famineTurns||0)+1:0;
+ state.foodWarningTurns=warning?(state.foodWarningTurns||0)+1:0;
+ if(region===K.playerRegion&&deficit>0&&turnsLeft<=5&&
+    (state.lastFoodForecast!==turnsLeft||turnsLeft===0&&K.turn%3===0)){
+  state.lastFoodForecast=turnsLeft;
+  var forecast='🌾 Yiyecek açığı: üretim '+production+', tüketim '+need+'. Stok yaklaşık '+
+   turnsLeft+' tur sonra bitecek. Tarla veya Ağıl inşa et.';
+  K.news.unshift(forecast);say(forecast);
+ }
+ if(turnsLeft>5)state.lastFoodForecast=null;
  if(warning){
+  var severe=shortage&&state.famineTurns>=4,loyaltyLoss=severe?2:state.foodWarningTurns%2===0?1:0;
   if(region===K.playerRegion){
-   K.peopleHappy=Math.max(0,K.peopleHappy-(shortage?2:1));
-   K.armyLoyal=Math.max(0,K.armyLoyal-(shortage?2:1))
+   K.peopleHappy=Math.max(0,K.peopleHappy-loyaltyLoss);
+   K.armyLoyal=Math.max(0,K.armyLoyal-loyaltyLoss)
   }else{
-   state.people=Math.max(0,state.people-(shortage?2:1));
-   state.armyLoyal=Math.max(0,state.armyLoyal-(shortage?2:1))
+   state.people=Math.max(0,state.people-loyaltyLoss);
+   state.armyLoyal=Math.max(0,state.armyLoyal-loyaltyLoss)
   }
   armies.forEach(function(u){
-   u.supply=Math.max(0,(u.supply||0)-(shortage?8:3));
+   u.supply=Math.max(0,(u.supply||0)-(shortage?6:2));
    if(shortage){
-    u.morale=Math.max(0,(u.morale||0)-4);
-    if(state.famineTurns>=2&&state.famineTurns%2===0&&u.soldiers>1)u.soldiers--
+    u.morale=Math.max(0,(u.morale||0)-(severe?4:2));
+    if(state.famineTurns>=4&&state.famineTurns%3===0&&u.soldiers>1)u.soldiers--
    }
   });
-  if(shortage)K.news.unshift('⚠ '+region+' kıtlığı: '+shortage+' yiyecek eksik. Mutluluk ve ordu sadakati düştü'+(state.famineTurns>=2&&state.famineTurns%2===0?'; ordulardan birer asker ayrıldı.':'.'));
+  if(shortage)K.news.unshift('⚠ '+region+' kıtlığı: '+shortage+' yiyecek eksik. Mutluluk ve ordu sadakati baskı altında'+(state.famineTurns>=4&&state.famineTurns%3===0?'; ordulardan birer asker ayrıldı.':'.'));
   else if(region===K.playerRegion)K.news.unshift('⚠ Yiyecek stoğu güvenli sınırın altında. Halk ve ordu huzursuz.');
  }else if(!shortage){
   armies.forEach(function(u){u.supply=Math.min(100,(u.supply||0)+2)})
  }
- if(shortage&&(region===K.playerRegion?K.peopleHappy:state.people)<=25&&state.armyLoyal<=30){
+ if(state.famineTurns>=8&&(region===K.playerRegion?K.peopleHappy:state.people)<=25&&state.armyLoyal<=30){
   state.famineRevoltTurns=(state.famineRevoltTurns||0)+1
  }else state.famineRevoltTurns=0;
  if(state.famineRevoltCooldown>0)state.famineRevoltCooldown--;
- if(state.famineRevoltTurns>=3&&!state.famineRevoltCooldown&&v283Owned(region).length>=3){
+ if(state.famineRevoltTurns>=4&&!state.famineRevoltCooldown&&v283Owned(region).length>=3){
   var before=state.food,treasury=state.gold,rebel=v38Fragment(region,{
    people:region===K.playerRegion?K.peopleHappy:state.people,
    armyLoyal:state.armyLoyal,gold:treasury
-  },region===K.playerRegion?K.at:null);
+  },region===K.playerRegion?K.at:null,1);
   if(rebel){
    var rebelState=v45FoodState(rebel),transfer=Math.min(state.food,Math.max(0,Math.floor(before*.25)));
    state.food-=transfer;
    /* İsyancı şehirler kendi küçük yerel stoklarını korur; eski krallığın hazinesinden bedava yiyecek üretilmez. */
    rebelState.food=Math.max(v283Owned(rebel).length*2,transfer);
    state.gold=Math.max(0,treasury-Math.max(15,Math.floor(treasury*.22)));
-   state.famineRevoltCooldown=6;state.famineRevoltTurns=0;
+   state.famineRevoltCooldown=18;state.famineRevoltTurns=0;
    K.news.unshift('🚩 '+region+' kıtlığı isyana dönüştü. '+rebel+' bağımsızlığını ilan etti.');
    if(region===K.playerRegion){sync();say('🚩 Kıtlık isyanı! Bazı şehirler '+rebel+' yönetimine geçti.')}
   }
@@ -3431,15 +3442,15 @@ openDiplomacy=function(){
 sync();
 </script>
 <script>
-/* V46 — Her krallığın yiyecek üretimi yalnız kontrolündeki başkentinden gelir. */
-BUILD['Tarla'].bonus='Başkentte seviye başına +4 yiyecek / tur (en çok 3)';
-BUILD['Ağıl'].bonus='Başkentte seviye başına +2 yiyecek, +1 gelişmişlik / tur (en çok 3)';
-BUILD['Han'].bonus='+1 altın ve +1 gelişmişlik / tur; başkentte ayrıca +1 yiyecek';
-BUILD['Pazar'].bonus='+2 altın / tur; başkentte ayrıca +1 yiyecek';
+/* V46 — Her kontrol edilen şehirde inşa edilen yapılar yiyecek üretir. */
+BUILD['Tarla'].bonus='Seviye başına +4 yiyecek / tur (en çok 3)';
+BUILD['Ağıl'].bonus='Seviye başına +2 yiyecek, +1 gelişmişlik / tur (en çok 3)';
+BUILD['Han'].bonus='+1 altın, +1 gelişmişlik ve +1 yiyecek / tur';
+BUILD['Pazar'].bonus='+2 altın ve +1 yiyecek / tur';
 var v46OldCityBonuses=v44CityBonuses;
 v44CityBonuses=function(city){
- var b=v46OldCityBonuses(city),owner=ownerOf(city),st=settlements[city];
- if(!st||!owner||capitals[owner]!==city){b.food=0;return b}
+ var b=v46OldCityBonuses(city),st=settlements[city];
+ if(!st)return b;
  var farm=Math.min(3,st.buildings.filter(function(n){return n==='Tarla'}).length);
  var ranch=Math.min(3,st.buildings.filter(function(n){return n==='Ağıl'}).length);
  b.food+=4*Math.max(0,farm-1)+2*Math.max(0,ranch-1);
@@ -3447,38 +3458,35 @@ v44CityBonuses=function(city){
  return b
 };
 v45Production=function(region){
- var capital=capitals[region];
- return capital&&ownerOf(capital)===region?v44CityBonuses(capital).food:0
+ return v283Owned(region).reduce(function(total,city){return total+v44CityBonuses(city.name).food},0)
 };
 startBuild=function(name){
  var city=K.selectedCity,st=settlements[city],limit=name==='Tarla'||name==='Ağıl'?3:1;
  if(!st||!playerControls(city))return v44OldStartBuild.apply(this,arguments);
- if((name==='Tarla'||name==='Ağıl')&&city!==capitals[K.playerRegion]){say('🌾 Yiyecek yapıları yalnız başkentte kurulabilir.');return}
  if(name!=='Küçük Sur'&&st.buildings.filter(function(b){return b===name}).length>=limit){say('⛔ Bu yapı en yüksek seviyede.');return}
  return v44OldStartBuild.apply(this,arguments)
 };
 buildMenu=function(){
  var city=K.selectedCity;
  if(!playerControls(city)){say('⛔ Yalnız kendi şehirlerinde inşaat yapabilirsin.');return}
- var st=settlements[city],capital=city===capitals[K.playerRegion];
+ var st=settlements[city];
  var h='<div class="row"><h2 style="flex:1">İnşa • '+city+'</h2><button onclick="openSettlement(\''+city+'\')">←</button></div>'+
-  '<div class="small">Yiyecek yalnız başkentteki yapılardan üretilir. Tarla ve Ağıl seviye 3\'e kadar geliştirilebilir.</div>';
+  '<div class="small">Kontrol ettiğin her şehirde yapılar yiyecek üretir. Tarla ve Ağıl seviye 3\'e kadar geliştirilebilir.</div>';
  Object.keys(BUILD).forEach(function(name){
   var b=BUILD[name],level=name==='Küçük Sur'?wallLevel(city):st.buildings.filter(function(x){return x===name}).length;
   var max=name==='Küçük Sur'||name==='Tarla'||name==='Ağıl'?3:1;
-  var unavailable=(name==='Tarla'||name==='Ağıl')&&!capital;
   var label=max>1?name+' • Seviye '+Math.min(max,level+1):name;
   h+='<div class="card build"><div><b>'+label+'</b><div class="small">'+b.cost+' altın • '+b.time+' tur • '+b.bonus+'</div></div>'+
-    (unavailable?'<button disabled>Başkentte</button>':level>=max?'<button disabled>Tamamlandı</button>':'<button onclick="startBuild(\''+name+'\')">İnşa</button>')+'</div>'
+    (level>=max?'<button disabled>Tamamlandı</button>':'<button onclick="startBuild(\''+name+'\')">İnşa</button>')+'</div>'
  });
  panel(h)
 };
 openSettlement=function(city){
  var result=v44OldOpenSettlement.apply(this,arguments),box=el('panel');
  if(box){
-  var b=v44CityBonuses(city),owner=ownerOf(city),capital=capitals[owner]===city;
+  var b=v44CityBonuses(city);
   box.innerHTML+='<div class="card"><b>🏗 Yapıların tur başına katkısı</b><br>Yiyecek: +'+b.food+' • Altın: +'+b.gold+' • Yerel gelişmişlik: +'+b.dev+
-   '<br><span class="small">'+(capital?'Başkent: yiyecek üretimi aktif.':'Başkent dışı: yiyecek üretimi yok.')+' Kazançlar şehrin güncel sahibine aittir.</span></div>'
+   '<br><span class="small">Yiyecek üretimi yapılarla sağlanır. Kazançlar şehrin güncel sahibine aittir.</span></div>'
  }
  return result
 };
@@ -3486,14 +3494,16 @@ v28AITurn=function(region){
  if(region!==K.playerRegion&&v283Owned(region).length){
   var st=v45FoodState(region),need=v45Need(region),production=v45Production(region);
   v45Famine(region,st,need,production);
-  var capital=capitals[region],city=settlements[capital];
-  if(production<need+2&&city&&ownerOf(capital)===region&&!city.construction){
+  if(production<need+2){
    ['Tarla','Ağıl','Han','Pazar'].some(function(name){
     var limit=name==='Tarla'||name==='Ağıl'?3:1;
-    if(city.buildings.filter(function(x){return x===name}).length>=limit||st.gold<BUILD[name].cost)return false;
+    if(st.gold<BUILD[name].cost)return false;
+    var place=v283Owned(region).find(function(c){var city=settlements[c.name];return city&&!city.construction&&city.buildings.filter(function(x){return x===name}).length<limit});
+    if(!place)return false;
+    var city=settlements[place.name];
     st.gold-=BUILD[name].cost;
     city.construction={name:name,left:BUILD[name].time};
-    K.news.unshift('🌾 '+region+' başkentinde '+name+' inşa ederek yiyecek üretimini artırıyor.');
+    K.news.unshift('🌾 '+region+', '+place.name+' şehrinde '+name+' inşa ederek yiyecek üretimini artırıyor.');
     return true
    })
   }
@@ -3501,5 +3511,492 @@ v28AITurn=function(region){
  return v45OldAITurn.apply(this,arguments)
 };
 sync();
+</script>
+<script>
+/* V47 — Kral ölümü savaşı bitirmez; barış teklifi üstün tarafın onayıyla sonuçlanır. */
+var V47_PEACE_OFFERS=[],V47_PEACE_PERMIT=null,V47_PEACE_ID=0;
+function v47Advantage(a,b){
+ var pa=v35Power(a)+v283Owned(a).length*5,pb=v35Power(b)+v283Owned(b).length*5;
+ return pa>pb+1?a:pb>pa+1?b:null
+}
+function v47CanEnd(a,b){
+ return V47_PEACE_PERMIT===v331Key(a,b)||V28_DESTROYED[a]||V28_DESTROYED[b]||
+  !v283Owned(a).length||!v283Owned(b).length
+}
+var v47OldSetWar=setWar;
+setWar=function(a,b,on){
+ if(on===false&&v331Authorized(a,b)&&!v47CanEnd(a,b))return false;
+ return v47OldSetWar.apply(this,arguments)
+};
+var v47OldProtectedWar=v35SetWar;
+v35SetWar=function(a,b,on){
+ if(on===false&&v331Authorized(a,b)&&!v47CanEnd(a,b))return false;
+ return v47OldProtectedWar.apply(this,arguments)
+};
+function v47AcceptPeace(a,b){
+ if(!v331Authorized(a,b))return false;
+ V47_PEACE_PERMIT=v331Key(a,b);
+ try{return setWar(a,b,false)}finally{V47_PEACE_PERMIT=null}
+}
+function v47SubmitPeace(from,to){
+ if(!v331Authorized(from,to))return false;
+ if(V47_PEACE_OFFERS.some(function(p){return v331Key(p.from,p.to)===v331Key(from,to)}))return false;
+ V47_PEACE_OFFERS.push({id:++V47_PEACE_ID,from:from,to:to,dueTurn:K.turn+1,awaitingPlayer:false});
+ K.news.unshift('🕊 '+from+' → '+to+' barış teklifi gönderdi; karar gelecek tur açıklanacak.');
+ return true
+}
+function v47AIWouldAccept(winner,loser){
+ var war=v30D(winner,loser),state=v34S(winner,loser);
+ var elapsed=K.turn-(V331_WAR_AUTH[v331Key(winner,loser)]||{}).declaredTurn;
+ return war.warFatigue>=40||elapsed>=8||v283Owned(winner).length<=2||Math.abs(state.warScore)>=30
+}
+function v47ResolvePeaceOffer(p){
+ if(!v331Authorized(p.from,p.to)){K.news.unshift('📜 '+p.from+' / '+p.to+' barış teklifi geçersiz: savaş sona erdi.');return false}
+ var winner=v47Advantage(p.from,p.to),decisionMaker=winner||p.to;
+ if(decisionMaker===K.playerRegion&&p.from!==K.playerRegion){
+  p.awaitingPlayer=true;
+  K.news.unshift('🕊 '+p.from+' barış teklif etti. Avantajlı taraf olarak kararı sen vereceksin.');
+  say('🕊 '+p.from+' barış teklif etti. Diplomasi ekranından kabul veya reddet.');
+  return true
+ }
+ var approved=decisionMaker===p.from||v47AIWouldAccept(decisionMaker,p.from);
+ if(approved&&v47AcceptPeace(p.from,p.to))K.news.unshift('🕊 '+decisionMaker+' barışı kabul etti; '+p.from+' ile '+p.to+' arasındaki savaş bitti.');
+ else K.news.unshift('❌ '+decisionMaker+' barış teklifini reddetti; '+p.from+' ile '+p.to+' arasındaki savaş sürüyor.');
+ return false
+}
+function v47AnswerPeace(id,accepted){
+ var index=V47_PEACE_OFFERS.findIndex(function(p){return p.id===id&&p.awaitingPlayer});
+ if(index<0)return;
+ var p=V47_PEACE_OFFERS[index];
+ if(v47Advantage(p.from,p.to)!==K.playerRegion){
+  V47_PEACE_OFFERS.splice(index,1);
+  say('⚠ Savaş dengesi değişti; barış teklifi geçersiz oldu.');return
+ }
+ V47_PEACE_OFFERS.splice(index,1);
+ if(accepted&&v47AcceptPeace(p.from,p.to)){K.news.unshift('🕊 '+p.from+' barış teklifini kabul ettin; savaş sona erdi.');say('🕊 Barış kabul edildi.')}
+ else{K.news.unshift('❌ '+p.from+' barış teklifini reddettin; savaş sürüyor.');say('⚔ Barış reddedildi; savaş sürüyor.')}
+ openDiplomacy()
+}
+/* Eski AI barış işlevi artık savaş kapatmak yerine teklif gönderir. */
+v34TryPeace=function(a,b){
+ if(!v331Authorized(a,b)||a===K.playerRegion)return false;
+ var state=v34S(a,b),auth=V331_WAR_AUTH[v331Key(a,b)];
+ if(!auth||K.turn-auth.declaredTurn<2||K.turn-state.lastPeaceOffer<3)return false;
+ var tired=v30D(a,b).warFatigue>=45,losing=v47Advantage(a,b)===b;
+ if(!tired&&!losing)return false;
+ if(!v47SubmitPeace(a,b))return false;
+ state.lastPeaceOffer=K.turn;
+ /* Eski AI true sonucunu "barış yapıldı" diye yazar; teklif henüz savaş bitirmez. */
+ return false
+};
+var v47OldDiplomacyResolve=v40Resolve;
+v40Resolve=function(p){
+ if(p.kind!=='peace')return v47OldDiplomacyResolve.apply(this,arguments);
+ var me=K.playerRegion,other=p.other;
+ if(!v331Authorized(me,other)){say('📜 Barış teklifi geçersiz: aktif savaş yok.');return}
+ var winner=v47Advantage(me,other),approved=winner===me||v47AIWouldAccept(other,me);
+ if(approved&&v47AcceptPeace(me,other)){K.news.unshift('🕊 '+(winner||other)+' barışı kabul etti; savaş sona erdi.');say('🕊 Barış kabul edildi.')}
+ else{K.news.unshift('❌ '+other+' barışı reddetti; savaş sürüyor.');say('❌ Barış teklifi reddedildi; savaş sürüyor.')}
+};
+var v47OldEndTurn=endTurn;
+endTurn=function(){
+ var previous=K.turn,result=v47OldEndTurn.apply(this,arguments);
+ if(K.turn===previous)return result;
+ var due=V47_PEACE_OFFERS.filter(function(p){return !p.awaitingPlayer&&p.dueTurn<=K.turn});
+ V47_PEACE_OFFERS=V47_PEACE_OFFERS.filter(function(p){return p.awaitingPlayer||p.dueTurn>K.turn});
+ due.forEach(function(p){if(v47ResolvePeaceOffer(p))V47_PEACE_OFFERS.push(p)});
+ return result
+};
+var v47OldOpenDiplomacy=openDiplomacy;
+openDiplomacy=function(){
+ v47OldOpenDiplomacy.apply(this,arguments);
+ var box=el('panel');if(!box)return;
+ var pending=V47_PEACE_OFFERS.filter(function(p){return p.awaitingPlayer&&v331Authorized(p.from,p.to)});
+ if(pending.length)box.innerHTML+='<div class="card"><b>🕊 Kararını Bekleyen Barış Teklifleri</b>'+pending.map(function(p){
+  return '<div class="row">'+v37Safe(p.from)+' teklif ediyor <button onclick="v47AnswerPeace('+p.id+',true)">Kabul et</button><button onclick="v47AnswerPeace('+p.id+',false)">Reddet</button></div>'
+ }).join('')+'</div>'
+};
+</script>
+<script>
+/* V48 — Süreli saldırmazlık, seçici ittifak ve sınır rekabeti. */
+var V48_RELATIONS={};
+function v48State(a,b){
+ var key=v30Key(a,b);
+ return V48_RELATIONS[key]||(V48_RELATIONS[key]={nonAggressionUntil:0,aiNonAggressionUsed:false,peaceUntil:0,pressure:0,wars:0});
+}
+var v48PreviousTreaty=v30Treaty;
+v30Treaty=function(a,b,type,on){
+ var result=v48PreviousTreaty.apply(this,arguments);
+ if(type==="nonAggression"){
+  var state=v48State(a,b);
+  state.nonAggressionUntil=on?K.turn+12:0;
+  if(on)state.aiNonAggressionUsed=true;
+ }
+ return result;
+};
+/* Yalnız ortak bir savaş tehdidi olan ülkeler askerî ittifak kurar. */
+function v48CommonThreat(a,b){
+ return v283Regions().some(function(x){
+  return x!==a&&x!==b&&!V28_DESTROYED[x]&&v331Authorized(a,x)&&v331Authorized(b,x);
+ });
+}
+v30AIDiplomacy=function(r){
+ var others=v283Regions().filter(function(x){return x!==r&&!V28_DESTROYED[x]});
+ others.forEach(function(o){
+  var d=v30D(r,o);
+  if(atWar(r,o)){d.warTurns++;d.warFatigue=Math.min(100,d.warFatigue+2);d.relation=Math.max(-100,d.relation-.5)}
+  else{d.peaceTurns++;d.warFatigue=Math.max(0,d.warFatigue-1);d.grievance=Math.max(0,d.grievance-.15)}
+  d.fear=Math.max(0,Math.min(100,10+(v30Power(o)-v30Power(r))*2));
+ });
+ if(others.some(function(o){return atWar(r,o)})||K.turn%4!==r.length%4)return;
+ var choices=[];
+ others.forEach(function(o){
+  if(atWar(r,o))return;
+  ["trade","access","nonAggression","defensive","alliance"].forEach(function(t){
+   if(v30Has(r,o,t))return;
+   var state=v48State(r,o),border=v34Border(r,o);
+   if(t==="nonAggression"&&(!border||state.aiNonAggressionUsed||
+      v283Regions().some(function(x){return x!==o&&v30Has(r,x,"nonAggression")})||
+      v30Power(o)<v30Power(r)*1.25))return;
+   if((t==="alliance"||t==="defensive")&&!v48CommonThreat(r,o))return;
+   var score=v30Value(r,o,t)-v29RepeatPenalty(r,"dip:"+t+":"+o);
+   choices.push({o:o,t:t,s:score});
+  });
+ });
+ choices.sort(function(a,b){return b.s-a.s});
+ if(choices.length&&choices[0].s>35){
+  var c=choices[0];
+  if(v30Value(c.o,r,c.t)>15){
+   v30Treaty(r,c.o,c.t,true);v29Remember(r,"dip:"+c.t+":"+c.o,true);
+   K.news.unshift("🤝 "+r+" ile "+c.o+" arasında "+v30Label(c.t)+" anlaşması imzalandı.");
+  }else v29Remember(r,"dip:"+c.t+":"+c.o,false);
+ }
+};
+var v48PreviousWarDecision=v35WarDecision;
+v35WarDecision=function(r,e){
+ var decision=v48PreviousWarDecision(r,e),state=v48State(r,e);
+ if(decision.score<=-999)return decision;
+ if(K.turn<state.peaceUntil)return {score:-999,reason:"Barış sonrası altı tur bekleme"};
+ var pair=v30Key(r,e),seed=Array.from(pair).reduce(function(n,c){return n+c.charCodeAt(0)},0);
+ if(state.pressure<22+seed%12+Math.min(16,state.wars*8))
+  return {score:-25,reason:"Sınır krizi henüz olgunlaşmadı"};
+ var mine=v35Power(r),enemy=v35Power(e),units=v35Units(r),supply=units.length?
+  units.reduce(function(n,u){return n+(u.supply==null?70:u.supply)},0)/units.length:0;
+ /* Rekabet, zayıf ya da ikmalsiz bir orduyu savaşa zorlamaz. */
+ if(mine<13||mine/enemy<.9||supply<50||v35CityValue(r,e)<10)return decision;
+ var added=Math.min(36,Math.floor(state.pressure));
+ return {score:decision.score+added,reason:added&&decision.score+added>=13?
+  "Uzayan sınır rekabeti ve ulaşılabilir hedef":decision.reason,
+  gain:decision.gain,loss:decision.loss};
+};
+var v48PreviousSetWar=setWar;
+setWar=function(a,b,on){
+ var was=v331Authorized(a,b),result=v48PreviousSetWar.apply(this,arguments);
+ if(was&&!v331Authorized(a,b)){
+  var state=v48State(a,b);state.peaceUntil=K.turn+6;state.pressure=0;
+ }
+ if(!was&&v331Authorized(a,b)){
+  var newState=v48State(a,b);newState.pressure=0;
+  if(newState.lastWarTurn!==K.turn){newState.wars++;newState.lastWarTurn=K.turn}
+ }
+ return result;
+};
+/* Himaye savaşları iç kapıdan açıldığı için aynı bekleme süresini orada da uygula. */
+var v48PreviousProtectedWar=v35SetWar;
+v35SetWar=function(a,b,on){
+ var state=v48State(a,b),was=v331Authorized(a,b);
+ if(on&&!was&&K.turn<state.peaceUntil)return false;
+ var result=v48PreviousProtectedWar.apply(this,arguments);
+ if(was&&!v331Authorized(a,b)){state.peaceUntil=K.turn+6;state.pressure=0}
+ if(!was&&v331Authorized(a,b)){
+  state.pressure=0;
+  if(state.lastWarTurn!==K.turn){state.wars++;state.lastWarTurn=K.turn}
+ }
+ return result;
+};
+var v48PreviousEndTurn=endTurn;
+endTurn=function(){
+ var oldTurn=K.turn,result=v48PreviousEndTurn.apply(this,arguments);
+ if(K.turn===oldTurn)return result;
+ var regions=v283Regions();
+ for(var i=0;i<regions.length;i++)for(var j=i+1;j<regions.length;j++){
+  var a=regions[i],b=regions[j],state=v48State(a,b);
+  if(state.nonAggressionUntil&&K.turn>=state.nonAggressionUntil){
+   state.nonAggressionUntil=0;
+   if(v30Has(a,b,"nonAggression")){
+    v30Treaty(a,b,"nonAggression",false);
+    K.news.unshift("📜 "+a+" ile "+b+" arasındaki saldırmazlık anlaşmasının 12 turluk süresi doldu.");
+   }
+  }
+  if(v331Authorized(a,b)||!v283Owned(a).length||!v283Owned(b).length){state.pressure=0;continue}
+  if(v34Border(a,b)&&!v30Has(a,b,"nonAggression")&&!v30Has(a,b,"alliance")&&
+     !v30Has(a,b,"defensive")&&K.turn>=state.peaceUntil){
+   state.pressure=Math.min(55,state.pressure+.9);
+  }else state.pressure=Math.max(0,state.pressure-2);
+ }
+ return result;
+};
+</script>
+<script>
+/* V49 — Yavaş fetih, kuşatma ikmali ve yeni şehirlerde düzen. */
+var v49OldSetOwner=setOwner;
+setOwner=function(city,newOwner,by,force){
+ var old=ownerOf(city),changed=v49OldSetOwner.apply(this,arguments);
+ if(changed&&old&&old!==newOwner&&force!=="STATE_EVENT"){
+  settlements[city].occupation={owner:newOwner,previous:old,guarded:0,unguarded:0,capturedTurn:K.turn};
+  K.news.unshift("🏳 "+city+" alındı. Düzen için ordu iki tur şehirde kalmalı; bu sırada yapı geliri azalır.");
+ }
+ return changed;
+};
+v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
+var v49OldBonuses=v44CityBonuses;
+v44CityBonuses=function(city){
+ var bonus=v49OldBonuses(city),s=settlements[city],o=s&&s.occupation;
+ if(o&&o.owner===ownerOf(city)){
+  bonus.food=Math.floor(bonus.food/2);
+  bonus.gold=Math.floor(bonus.gold/2);
+  bonus.dev=0;
+ }
+ return bonus;
+};
+function v49Occupations(){
+ DATA.forEach(function(c){
+  var city=c.name,s=settlements[city],o=s&&s.occupation;
+  if(!o)return;
+  if(ownerOf(city)!==o.owner){s.occupation=null;return}
+  if(K.turn<=o.capturedTurn)return;
+  var guard=armyAtFor(o.owner,city);
+  if(guard&&guard.soldiers>0&&guard.supply>=20){
+   o.guarded++;o.unguarded=0;
+   if(o.guarded>=2){s.occupation=null;K.news.unshift("✅ "+city+" garnizonu düzeni sağladı; yapı üretimi normale döndü.")}
+  }else{
+   o.guarded=0;o.unguarded++;
+   if(o.unguarded>=2&&v283Owned(o.previous).length&&v331Authorized(o.owner,o.previous)){
+    s.occupation=null;
+    if(setOwner(city,o.previous,"Yerel direniş","STATE_EVENT"))
+     K.news.unshift("🚩 Garnizonsuz "+city+" yerel direnişle "+o.previous+" yönetimine döndü.");
+   }else if(o.unguarded>=2&&o.unguarded%2===0){
+    s.dev=Math.max(0,(s.dev||0)-3);
+    K.news.unshift("⚠ "+city+" garnizonsuz; yerel düzen ve gelişmişlik geriledi.");
+   }
+  }
+ });
+}
+/* Her ordu bir turda yalnızca bir düşman şehrine saldırabilir. */
+var v49OldAIMove=v28MoveUnit;
+v28MoveUnit=function(region,unit){
+ var target=unit&&v28ChooseMove(region,unit),enemy=target&&ownerOf(target);
+ if(enemy&&enemy!==region&&v331Authorized(region,enemy)&&unit.lastAssaultTurn===K.turn)return false;
+ var before=v28State(region).ap,result=v49OldAIMove.apply(this,arguments);
+ if(enemy&&enemy!==region&&v331Authorized(region,enemy)&&v28State(region).ap<before)
+  unit.lastAssaultTurn=K.turn;
+ return result;
+};
+var v49OldMoveTo=moveTo;
+moveTo=function(city){
+ var enemy=ownerOf(city),hostile=enemy&&enemy!==K.playerRegion&&v331Authorized(K.playerRegion,enemy);
+ if(hostile&&K.kingArmy.lastAssaultTurn===K.turn){say("⛔ Kral ordusu bu tur zaten saldırdı.");return}
+ var before=K.actionPoints,result=v49OldMoveTo.apply(this,arguments);
+ if(hostile&&K.actionPoints<before)K.kingArmy.lastAssaultTurn=K.turn;
+ return result;
+};
+var v49OldGeneralMove=moveGeneralTo;
+moveGeneralTo=function(city){
+ var army=generals[K.activeGeneral],enemy=ownerOf(city);
+ var hostile=army&&enemy&&enemy!==K.playerRegion&&v331Authorized(K.playerRegion,enemy);
+ if(hostile&&army.lastAssaultTurn===K.turn){say("⛔ Bu ordu bu tur zaten saldırdı.");return}
+ var before=K.actionPoints,result=v49OldGeneralMove.apply(this,arguments);
+ if(hostile&&K.actionPoints<before)army.lastAssaultTurn=K.turn;
+ return result;
+};
+var v49OldAssault=v42ResolveAssault;
+v42ResolveAssault=function(){
+ var army=v42Pending&&v42Pending.army,result=v49OldAssault.apply(this,arguments);
+ if(army)army.lastAssaultTurn=K.turn;
+ return result;
+};
+/* Aç ve morali bozulan kuşatma ordusu ilerleyemez, uzun açlıkta asker kaybeder. */
+progressSieges=function(){
+ DATA.forEach(function(c){
+  var city=c.name,s=settlements[city],q=s.siege;if(!q)return;
+  var owner=ownerOf(city),army=armyAtFor(q.attacker,city);
+  if(!owner||owner===q.attacker||!v331CanAttackNow(q.attacker,owner)||!army){s.siege=null;return}
+  q.required=wallLevel(city)||q.required;
+  if(v312Defenders(owner,city).length){K.news.unshift("🛡 "+city+" kuşatmasını savunma ordusu durdurdu.");return}
+  army.supply=Math.max(0,(army.supply||0)-7);
+  if(army.supply<35||army.morale<30||army.soldiers<3){
+   q.shortage=(q.shortage||0)+1;
+   army.morale=Math.max(0,(army.morale||0)-5);
+   if(q.shortage%2===0&&army.soldiers>1)army.soldiers--;
+   K.news.unshift("⚠ "+city+" kuşatması ikmal, moral veya asker yetersizliğinden ilerlemedi.");
+   return;
+  }
+  q.shortage=0;q.progress++;
+  if(q.progress>=q.required){
+   v43SiegePermit=city;
+   try{captureSettlement(city,q.attacker,q.army)}finally{v43SiegePermit=null}
+   if(ownerOf(city)===q.attacker)s.siege=null;
+  }
+ });
+};
+var v49OldEndTurn=endTurn;
+endTurn=function(){
+ var before=K.turn,result=v49OldEndTurn.apply(this,arguments);
+ if(K.turn!==before)v49Occupations();
+ return result;
+};
+</script>
+<script>
+/* V50 — Yapılara dayalı başlangıç gıdası ve son şehir sonrası oyun sonu. */
+v283Regions().forEach(function(region){
+ var capital=capitals[region],city=settlements[capital];
+ if(city&&city.owner===region&&city.buildings.indexOf('Tarla')<0){
+  city.buildings.push('Tarla','Tarla');
+ }
+});
+var v50OldSetOwner=setOwner;
+setOwner=function(city,newOwner,by,force){
+ var old=ownerOf(city),changed=v50OldSetOwner.apply(this,arguments);
+ if(!changed||old===newOwner)return changed;
+ if(newOwner===K.playerRegion&&v283Owned(K.playerRegion).length){
+  if(K.exileTurns!=null){K.news.unshift('👑 Bir şehir geri alındı; krallık yeniden kuruldu.');K.exileTurns=null}
+ }
+ if(old===K.playerRegion&&!v283Owned(K.playerRegion).length&&!K.gameOver){
+  if(K.kingArmy&&K.kingArmy.soldiers>0&&!K.pendingPlayerSuccession){
+   K.exileTurns=3;K.exileStartedTurn=K.turn;
+   K.news.unshift('⚠ Son şehir kaybedildi. Kral ordusu üç tur içinde bir şehir geri almalı.');
+   say('⚠ Son şehir kaybedildi. Kral ordusuyla üç tur içinde bir şehir geri al; aksi halde krallık yıkılacak.');
+  }else{
+   K.gameOver=true;K.news.unshift('☠ Son şehir ve kral ordusu kaybedildi; krallık yıkıldı.');
+   panel('<div class="card"><h2>☠ Krallık Yıkıldı</h2>Son şehir ve kral ordusu kaybedildi.</div>');
+  }
+ }
+ return changed;
+};
+v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
+var v50OldEndTurn=endTurn;
+endTurn=function(){
+ if(K.gameOver){say('☠ Krallık yıkıldı; yeni tur başlatılamaz.');return}
+ var previous=K.turn,result=v50OldEndTurn.apply(this,arguments);
+ if(K.turn===previous||K.exileTurns==null)return result;
+ if(v283Owned(K.playerRegion).length){K.exileTurns=null;return result}
+ if(!K.kingArmy||K.kingArmy.soldiers<=0||K.pendingPlayerSuccession){K.exileTurns=0}
+ else if(K.turn>K.exileStartedTurn)K.exileTurns--;
+ if(K.exileTurns<=0){
+  K.gameOver=true;K.exileTurns=null;
+  K.news.unshift('☠ Son şehir üç tur içinde geri alınamadı; krallık yıkıldı.');
+  panel('<div class="card"><h2>☠ Krallık Yıkıldı</h2>Son şehrini geri alma süresi doldu.</div>');
+  say('☠ Krallık yıkıldı.');
+ }else say('⚠ Krallık topraksız. Bir şehir geri almak için '+K.exileTurns+' tur kaldı.');
+ return result;
+};
+</script>
+<script>
+/* V51 — Gerçekleşen savaş olayları, takip eden turda açıklanan tek kayıt. */
+var V51_PENDING=[],V51_HISTORY=[],V51_SEQUENCE=0,V51_COMBAT_CITY=null;
+function v51Add(type,title,detail,a,b,city){
+ var event={id:++V51_SEQUENCE,type:type,title:title,detail:detail,a:a||'',b:b||'',city:city||'',
+  turn:K.turn,year:K.year,month:K.month,dueTurn:K.turn+1};
+ V51_PENDING.push(event);
+ if(V51_PENDING.length>150)V51_PENDING.shift();
+ return event;
+}
+function v51ObserveWar(a,b,on,was){
+ var now=v331Authorized(a,b);
+ if(was===now)return;
+ var type=now?'war':'peace',key=v331Key(a,b),exists=V51_PENDING.some(function(e){
+  return e.turn===K.turn&&e.type===type&&v331Key(e.a,e.b)===key;
+ });
+ if(!exists)v51Add(type,now?'Savaş ilanı':'Barış',
+  now?a+' → '+b+' savaş ilan etti.':a+' ile '+b+' arasındaki savaş sona erdi.',a,b);
+}
+var v51OldWar=setWar;
+setWar=function(a,b,on){
+ var was=v331Authorized(a,b),result=v51OldWar.apply(this,arguments);
+ v51ObserveWar(a,b,on,was);return result;
+};
+/* Himaye ve iç savaşlar, doğrudan korumalı savaş kapısını da kullanır. */
+var v51OldProtectedWar=v35SetWar;
+v35SetWar=function(a,b,on){
+ var was=v331Authorized(a,b),result=v51OldProtectedWar.apply(this,arguments);
+ v51ObserveWar(a,b,on,was);return result;
+};
+var v51OldBattle=v312Battle;
+v312Battle=function(attacker,units,defender,city){
+ var defenders=v312Defenders(defender,city),valid=v331CanAttackNow(attacker,defender)&&defenders.length>0;
+ var aBefore=units.reduce(function(n,u){return n+(u.soldiers||0)},0),
+     dBefore=defenders.reduce(function(n,u){return n+(u.soldiers||0)},0);
+ var entry=valid?v51Add('battle','Ordu muharebesi','',attacker,defender,city):null;
+ var prior=V51_COMBAT_CITY;
+ if(valid)V51_COMBAT_CITY=city;
+ var result;
+ try{result=v51OldBattle.apply(this,arguments)}finally{V51_COMBAT_CITY=prior}
+ if(entry){
+  var aLoss=Math.max(0,aBefore-units.reduce(function(n,u){return n+(u.soldiers||0)},0));
+  var dLoss=Math.max(0,dBefore-v312Defenders(defender,city).reduce(function(n,u){return n+(u.soldiers||0)},0));
+  entry.detail=city+': '+attacker+' saldırdı; '+(result?attacker:defender)+' kazandı. Asker kaybı '+attacker+
+   ' '+aLoss+', '+defender+' '+dLoss+'.';
+ }
+ return result;
+};
+v31Battle=function(a,units,b,defenders,city){return v312Battle(a,units,b,city)};
+var v51OldSiege=beginOccupation;
+beginOccupation=function(city,attacker,label){
+ var old=settlements[city]&&settlements[city].siege;
+ var result=v51OldSiege.apply(this,arguments),q=settlements[city]&&settlements[city].siege;
+ if(!old&&q&&q.attacker===attacker)
+  v51Add('siege','Kuşatma başladı',attacker+' '+city+' şehrini kuşattı. Sur seviye '+
+   wallLevel(city)+'; süre '+q.required+' tur.',attacker,ownerOf(city),city);
+ return result;
+};
+var v51OldOwner=setOwner;
+setOwner=function(city,newOwner,by,force){
+ var old=ownerOf(city),sieged=v43SiegePermit===city,combat=V51_COMBAT_CITY===city;
+ var changed=v51OldOwner.apply(this,arguments);
+ if(changed&&old&&old!==newOwner){
+  var retake=settlements[city].originalOwner===newOwner,
+      uprising=force==='STATE_EVENT'&&by==='İç savaş',
+      label=force==='STATE_EVENT'?'yerel direnişle':sieged?'kuşatma sonunda':combat?'muharebe sonunda':'savunma ordusu olmadan';
+  if(uprising)label='isyanla';
+  v51Add(uprising?'rebellion':retake?'retake':'conquest',
+   uprising?'Şehir isyanla ayrıldı':retake?'Şehir geri alındı':'Şehir fethedildi',
+   city+': '+old+' → '+newOwner+' ('+label+').',newOwner,old,city);
+ }
+ return changed;
+};
+v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
+function v51HistoryHTML(){
+ var icons={war:'⚔',peace:'🕊',battle:'🛡',siege:'🏰',conquest:'🚩',retake:'🔄',rebellion:'⚠'};
+ var h='<div class="card"><b>📜 Savaşın Akışı</b><div class="small">Olaylar sonraki turda açıklanır. Muharebe yalnız gerçek ordu çatışmasında kaydedilir.</div>';
+ if(!V51_HISTORY.length)h+='<div class="small">Henüz açıklanmış savaş olayı yok.</div>';
+ V51_HISTORY.slice(0,80).forEach(function(e){
+  h+='<div style="padding:8px 0;border-bottom:1px solid #42516b"><b>'+icons[e.type]+' '+
+   v37Safe(e.title)+'</b><div class="small">Tur '+e.turn+' • Yıl '+e.year+' Ay '+e.month+
+   ' • '+v37Safe(e.detail)+'</div></div>';
+ });
+ return h+'</div>';
+}
+var v51OldWarsHTML=v33WarsHTML;
+v33WarsHTML=function(){
+ /* Eski dünya olayları da ilgili savaşın açıklama turundan önce görünmez. */
+ var all=V33_EVENTS;
+ V33_EVENTS=all.filter(function(e){return e.turn<K.turn||
+  ['war','peace','battle'].indexOf(e.type)<0});
+ try{return v51OldWarsHTML.apply(this,arguments)+v51HistoryHTML()}
+ finally{V33_EVENTS=all}
+};
+openWarHistory=function(){
+ panel('<div class="row"><h2 style="flex:1">📜 Savaş Geçmişi</h2><button onclick="closePanel()">✕</button></div>'+v51HistoryHTML());
+};
+var v51OldEndTurn=endTurn;
+endTurn=function(){
+ var previous=K.turn,result=v51OldEndTurn.apply(this,arguments);
+ if(K.turn===previous)return result;
+ var due=V51_PENDING.filter(function(e){return e.dueTurn<=K.turn});
+ V51_PENDING=V51_PENDING.filter(function(e){return e.dueTurn>K.turn});
+ due.forEach(function(e){V51_HISTORY.unshift(e)});
+ if(V51_HISTORY.length>150)V51_HISTORY.length=150;
+ return result;
+};
 </script>
 </body></html>
