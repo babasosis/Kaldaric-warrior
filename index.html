@@ -3331,6 +3331,17 @@ function v45Famine(region,state,need,production){
  var armies=v45Armies(region),available=Math.max(0,state.food||0)+production;
  var shortage=Math.max(0,need-available);
  state.food=Math.max(0,available-need);
+ var storage=v54Storage(region,need),spoiled=0;
+ if(state.food>storage){
+  var excess=state.food-storage;
+  spoiled=Math.min(excess,Math.ceil(Math.min(50,excess)*.02+Math.max(0,excess-50)*.10));
+  state.food-=spoiled;
+  state.totalSpoiled=(state.totalSpoiled||0)+spoiled;
+  if(region===K.playerRegion&&(K.turn%10===0||!state.lastSpoilageNotice)){
+   K.news.unshift('🌾 Stok fazlasından '+spoiled+' yiyecek bozuldu. Güvenli sınır: '+storage+'. Ambar bu sınırı artırır.');
+   state.lastSpoilageNotice=true;
+  }
+ }else state.lastSpoilageNotice=false;
  var deficit=Math.max(0,need-production),turnsLeft=deficit?Math.floor(state.food/deficit):Infinity;
  var warning=need>0&&(shortage>0||state.food<need*2);
  state.famineTurns=shortage?(state.famineTurns||0)+1:0;
@@ -3384,7 +3395,7 @@ function v45Famine(region,state,need,production){
    if(region===K.playerRegion){sync();say('🚩 Kıtlık isyanı! Bazı şehirler '+rebel+' yönetimine geçti.')}
   }
  }
- return {need:need,production:production,shortage:shortage}
+ return {need:need,production:production,shortage:shortage,spoiled:spoiled}
 }
 /* V44'ün oyuncuya özel yiyecek hesabı yerine aynı kuralların ortak hesaplaması. */
 processBuilds=function(){
@@ -3863,9 +3874,9 @@ setOwner=function(city,newOwner,by,force){
  }
  if(old===K.playerRegion&&!v283Owned(K.playerRegion).length&&!K.gameOver){
   if(K.kingArmy&&K.kingArmy.soldiers>0&&!K.pendingPlayerSuccession){
-   K.exileTurns=3;K.exileStartedTurn=K.turn;
-   K.news.unshift('⚠ Son şehir kaybedildi. Kral ordusu üç tur içinde bir şehir geri almalı.');
-   say('⚠ Son şehir kaybedildi. Kral ordusuyla üç tur içinde bir şehir geri al; aksi halde krallık yıkılacak.');
+   K.exileTurns=5;K.exileStartedTurn=K.turn;
+   K.news.unshift('⚠ Son şehir kaybedildi. Kral ordusu beş tur içinde bir şehir geri almalı.');
+   say('⚠ Son şehir kaybedildi. Kral ordusuyla beş tur içinde bir şehir geri al; aksi halde krallık yıkılacak.');
   }else{
    K.gameOver=true;K.news.unshift('☠ Son şehir ve kral ordusu kaybedildi; krallık yıkıldı.');
    panel('<div class="card"><h2>☠ Krallık Yıkıldı</h2>Son şehir ve kral ordusu kaybedildi.</div>');
@@ -3884,7 +3895,7 @@ endTurn=function(){
  else if(K.turn>K.exileStartedTurn)K.exileTurns--;
  if(K.exileTurns<=0){
   K.gameOver=true;K.exileTurns=null;
-  K.news.unshift('☠ Son şehir üç tur içinde geri alınamadı; krallık yıkıldı.');
+  K.news.unshift('☠ Son şehir beş tur içinde geri alınamadı; krallık yıkıldı.');
   panel('<div class="card"><h2>☠ Krallık Yıkıldı</h2>Son şehrini geri alma süresi doldu.</div>');
   say('☠ Krallık yıkıldı.');
  }else say('⚠ Krallık topraksız. Bir şehir geri almak için '+K.exileTurns+' tur kaldı.');
@@ -3994,8 +4005,138 @@ endTurn=function(){
  if(K.turn===previous)return result;
  var due=V51_PENDING.filter(function(e){return e.dueTurn<=K.turn});
  V51_PENDING=V51_PENDING.filter(function(e){return e.dueTurn>K.turn});
- due.forEach(function(e){V51_HISTORY.unshift(e)});
+ due.forEach(function(e){V51_HISTORY.push(e)});
+ /* Yeni tur üstte; aynı turda olayların gerçek oluşma sırası korunur. */
+ V51_HISTORY.sort(function(a,b){return b.turn-a.turn||a.id-b.id});
  if(V51_HISTORY.length>150)V51_HISTORY.length=150;
+ return result;
+};
+</script>
+<script>
+/* V52 — Savaş açan AI için erişilebilir hedef ve gerçek sefer planı. */
+var V52_CAMPAIGNS={};
+function v52Target(r,e){
+ var candidates=[];
+ v283Owned(e).forEach(function(c){
+  var staging=v28Neighbors(c.name).filter(function(n){return ownerOf(n)===r});
+  if(!staging.length)return;
+  var reachable=staging.some(function(s){return v35Units(r).some(function(u){
+   return u.at===s||!!v36NextStep(r,u.at,s);
+  })});
+  if(!reachable)return;
+  var defenders=v31UnitsAt(e,c.name).reduce(function(n,u){return n+v36Strength(u)},0);
+  var strength=v35Units(r).reduce(function(n,u){return n+v36Strength(u)},0);
+  if(defenders>strength*.8)return;
+  var info=K.info[c.name]||{},value=12+(v35Doctrine(r).terrain.test((info.terrain||'')+' '+c.name)?10:0);
+  if(typeof PASS_CITIES!=='undefined'&&PASS_CITIES[c.name])value+=8;
+  value-=defenders*.8+wallLevel(c.name)*3;
+  candidates.push({city:c.name,stage:staging[0],score:value});
+ });
+ candidates.sort(function(a,b){return b.score-a.score});
+ return candidates[0]||null;
+}
+var v52PreviousWarDecision=v35WarDecision;
+v35WarDecision=function(r,e){
+ var decision=v52PreviousWarDecision(r,e);
+ if(decision.score>=13&&!v52Target(r,e))return {score:-25,reason:'İkmal hattından erişilebilir sınır hedefi yok'};
+ return decision;
+};
+var v52PreviousUpdatePlan=v36UpdatePlan;
+v36UpdatePlan=function(r){
+ var p=v52PreviousUpdatePlan(r),e=p.enemy;
+ if(!e)return p;
+ var record=V52_CAMPAIGNS[r];
+ if(!record||record.enemy!==e)record=V52_CAMPAIGNS[r]={enemy:e,start:K.turn,lastTurn:-1,target:null};
+ if(record.lastTurn===K.turn)return p;
+ record.lastTurn=K.turn;
+ var target=v52Target(r,e);
+ if(target)record.target=target.city;
+ else if(record.target&&ownerOf(record.target)===e){
+  var fallback=v283Owned(r).some(function(c){return v28Neighbors(c.name).indexOf(record.target)>=0});
+  if(fallback)target={city:record.target,stage:v28Neighbors(record.target).filter(function(n){return ownerOf(n)===r})[0]};
+ }
+ var mine=v35Power(r),theirs=v35Power(e),invaders=v35Units(e).some(function(u){return ownerOf(u.at)===r});
+ if(invaders&&mine<theirs*.85){p.mode='savunma';return p}
+ if(!target){p.mode='sınır savunması';return p}
+ /* İlk iki tur sınırda toplan; sonrasında seçili şehre ilerle. */
+ p.mode='sefer';p.target=K.turn-record.start<2?target.stage:target.city;
+ return p;
+};
+</script>
+<script>
+/* V53 — Kesin yenilgide son kayıtlar kaybolmaz; geri alma süresi beş turdur. */
+function v53DefeatPanel(){
+ var recent=V51_HISTORY.filter(function(e){
+  return e.type==='defeat'||e.a===K.playerRegion||e.b===K.playerRegion;
+ }).slice(0,8).sort(function(a,b){return a.turn-b.turn||a.id-b.id});
+ var icons={war:'⚔',peace:'🕊',battle:'🛡',siege:'🏰',conquest:'🚩',retake:'🔄',rebellion:'⚠',defeat:'☠'};
+ var rows=recent.map(function(e){
+  return '<div class="small" style="padding:6px 0;border-bottom:1px solid #42516b">Tur '+e.turn+
+   ' • '+icons[e.type]+' '+v37Safe(e.title)+' — '+v37Safe(e.detail)+'</div>';
+ }).join('');
+ panel('<div class="card"><h2>☠ Krallık Yıkıldı</h2><b>Son Savaşın Özeti</b>'+
+  (rows||'<div class="small">Kayıtlı savaş olayı yok.</div>')+
+  '<div class="row"><button onclick="openWarHistory()">📜 Tüm Savaş Geçmişi</button></div></div>');
+}
+function v53FinalizeDefeat(){
+ if(!K.gameOver)return;
+ if(!K.defeatFinalized){
+  K.defeatFinalized=true;
+  v51Add('defeat','Krallık yıkıldı','Son şehir geri alınamadı; oyun sona erdi.',K.playerRegion);
+ }
+ if(V51_PENDING.length){
+  V51_PENDING.forEach(function(e){V51_HISTORY.push(e)});
+  V51_PENDING=[];
+  V51_HISTORY.sort(function(a,b){return b.turn-a.turn||a.id-b.id});
+  if(V51_HISTORY.length>150)V51_HISTORY.length=150;
+ }
+ v53DefeatPanel();
+}
+var v53OldSetOwner=setOwner;
+setOwner=function(city,newOwner,by,force){
+ var result=v53OldSetOwner.apply(this,arguments);
+ if(K.gameOver)v53FinalizeDefeat();
+ return result;
+};
+v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
+var v53OldEndTurn=endTurn;
+endTurn=function(){
+ var result=v53OldEndTurn.apply(this,arguments);
+ if(K.gameOver)v53FinalizeDefeat();
+ return result;
+};
+</script>
+<script>
+/* V54 — Büyük yiyecek stoklarında hafif bozulma; Ambar depolamayı artırır. */
+BUILD['Ambar']={cost:12,time:2,bonus:'+60 güvenli yiyecek stoku • 1 altın / tur bakım'};
+function v54Ambars(region){
+ return v283Owned(region).reduce(function(n,c){
+  var s=settlements[c.name];return n+(s&&s.buildings.indexOf('Ambar')>=0?1:0);
+ },0);
+}
+function v54Storage(region,need){
+ var state=v45FoodState(region),cities=v283Owned(region).length;
+ return Math.max(0,20*need+25*cities+(!state.ambarUnpaid?v54Ambars(region)*60:0));
+}
+var v54OldSync=sync;
+sync=function(){
+ v54OldSync.apply(this,arguments);
+ var status=el('foodStatus');
+ if(status)status.title+=' • güvenli depo sınırı: '+v54Storage(K.playerRegion,v45Need(K.playerRegion));
+};
+var v54OldEndTurn=endTurn;
+endTurn=function(){
+ var previous=K.turn,result=v54OldEndTurn.apply(this,arguments);
+ if(K.turn===previous)return result;
+ v283Regions().forEach(function(region){
+  var count=v54Ambars(region);if(!count)return;
+  var state=v45FoodState(region),wasUnpaid=!!state.ambarUnpaid;
+  state.ambarUnpaid=state.gold<count;
+  if(!state.ambarUnpaid)state.gold-=count;
+  else if(region===K.playerRegion&&!wasUnpaid)
+   K.news.unshift('⚠ Ambar bakımı için '+count+' altın gerekli; ödeme yapılana kadar ek depo kapasitesi çalışmıyor.');
+ });
+ sync();
  return result;
 };
 </script>
