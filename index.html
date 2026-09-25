@@ -3969,6 +3969,7 @@ setOwner=function(city,newOwner,by,force){
       uprising=force==='STATE_EVENT'&&by==='İç savaş',
       label=force==='STATE_EVENT'?'yerel direnişle':sieged?'kuşatma sonunda':combat?'muharebe sonunda':'savunma ordusu olmadan';
   if(uprising)label='isyanla';
+  if(by==='Krallığın teslimi')label='krallığın teslimiyle';
   v51Add(uprising?'rebellion':retake?'retake':'conquest',
    uprising?'Şehir isyanla ayrıldı':retake?'Şehir geri alındı':'Şehir fethedildi',
    city+': '+old+' → '+newOwner+' ('+label+').',newOwner,old,city);
@@ -4139,5 +4140,91 @@ endTurn=function(){
  sync();
  return result;
 };
+</script>
+<script>
+/* V55 — Ana ülke ve kral ordusu yoksa dışarıdaki işgal toprakları son galibe geçer. */
+var V55_LAST_HOME_VICTOR={},V55_KING_SLAYER={},V55_COLLAPSING={};
+function v55NativeLand(region){
+ return v283Owned(region).filter(function(c){
+  var s=settlements[c.name];
+  return s&&(s.originalOwner===region||c.name===capitals[region]);
+ });
+}
+function v55KingStanding(region){
+ var king=kingdomKings[region];
+ return !!(king&&king.soldiers>0&&king.alive!==false&&!king.dead&&!king.captured);
+}
+function v55Victor(region){
+ var last=V55_LAST_HOME_VICTOR[region],slayer=V55_KING_SLAYER[region];
+ function valid(r){return r&&r!==region&&!V28_DESTROYED[r]&&v283Owned(r).length>0}
+ if(valid(last))return last;
+ if(valid(slayer))return slayer;
+ var original=DATA.filter(function(c){return settlements[c.name]&&
+  (settlements[c.name].originalOwner===region||c.name===capitals[region])});
+ for(var i=0;i<original.length;i++){
+  var current=ownerOf(original[i].name);
+  if(valid(current))return current;
+ }
+ return null;
+}
+function v55Collapse(region){
+ if(!region||region===K.playerRegion||V28_DESTROYED[region]||V55_COLLAPSING[region]||
+    v55NativeLand(region).length||v55KingStanding(region))return false;
+ var occupied=v283Owned(region),winner=v55Victor(region);
+ if(!occupied.length){v28CheckDestroy(region);return !!V28_DESTROYED[region]}
+ if(!winner)return false;
+ V55_COLLAPSING[region]=true;
+ var transferred=[];
+ try{
+  occupied.forEach(function(c){
+   if(setOwner(c.name,winner,'Krallığın teslimi','STATE_EVENT'))transferred.push(c.name);
+  });
+ }finally{delete V55_COLLAPSING[region]}
+ if(!v283Owned(region).length){
+  v28Destroy(region);
+  K.news.unshift('👑 '+region+' kral ordusu ve ana ülkesi düştü. '+
+   transferred.join(', ')+' üzerindeki işgal yönetimi '+winner+' krallığına geçti.');
+  return true;
+ }
+ return false;
+}
+var v55OldKingLoss=v38KingLoss;
+v38KingLoss=function(region,king,before,city,attacker){
+ if(king&&region!==K.playerRegion&&before>0&&king.soldiers<before&&
+    (king.soldiers<=0||(king.defeats||0)+1>=3))V55_KING_SLAYER[region]=attacker;
+ return v55OldKingLoss.apply(this,arguments);
+};
+var v55OldSuccession=v28Succession;
+v28Succession=function(region,deadCity){
+ if(region!==K.playerRegion&&!v55NativeLand(region).length&&!v55KingStanding(region)){
+  if(v55Collapse(region))return;
+ }
+ return v55OldSuccession.apply(this,arguments);
+};
+var v55OldSetOwner=setOwner;
+setOwner=function(city,newOwner,by,force){
+ var old=ownerOf(city),home=settlements[city]&&
+  (settlements[city].originalOwner===old||city===capitals[old]);
+ var changed=v55OldSetOwner.apply(this,arguments);
+ if(changed&&old&&old!==newOwner&&old!==K.playerRegion){
+  if(home&&!v55NativeLand(old).length&&by!=='İç savaş')V55_LAST_HOME_VICTOR[old]=newOwner;
+  if(v55NativeLand(old).length)delete V55_LAST_HOME_VICTOR[old];
+  v55Collapse(old);
+ }
+ return changed;
+};
+v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
+</script>
+<script>
+/* V56 — Merkez Kaldarya'da komşu küçük yerleşimler arasındaki eksik yollar. */
+function v56ConnectCities(a,b){
+ if(!K.info[a]||!K.info[b])return;
+ if(!FIXED_ROADS[a])FIXED_ROADS[a]=[];
+ if(!FIXED_ROADS[b])FIXED_ROADS[b]=[];
+ if(FIXED_ROADS[a].indexOf(b)<0)FIXED_ROADS[a].push(b);
+ if(FIXED_ROADS[b].indexOf(a)<0)FIXED_ROADS[b].push(a);
+}
+v56ConnectCities('Taç Ovası','Eski Kaldarya');
+v56ConnectCities('Eski Kaldarya','Kümüreçit');
 </script>
 </body></html>
