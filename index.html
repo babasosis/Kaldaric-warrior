@@ -4216,15 +4216,218 @@ setOwner=function(city,newOwner,by,force){
 v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
 </script>
 <script>
-/* V56 — Merkez Kaldarya'da komşu küçük yerleşimler arasındaki eksik yollar. */
-function v56ConnectCities(a,b){
+/* V57 — Nehir ve dağ sırtını aşan kestirmeler yerine haritadaki geçitlerden ilerle. */
+function v57DisconnectCities(a,b){
+ if(FIXED_ROADS[a])FIXED_ROADS[a]=FIXED_ROADS[a].filter(function(n){return n!==b});
+ if(FIXED_ROADS[b])FIXED_ROADS[b]=FIXED_ROADS[b].filter(function(n){return n!==a});
+ delete STRATEGIC_PASSES[a+'|'+b];delete STRATEGIC_PASSES[b+'|'+a];
+}
+function v57MarkPass(a,b){
+ if((FIXED_ROADS[a]||[]).indexOf(b)<0||(FIXED_ROADS[b]||[]).indexOf(a)<0)return;
+ STRATEGIC_PASSES[a+'|'+b]=1;STRATEGIC_PASSES[b+'|'+a]=1;
+ PASS_CITIES[a]=1;PASS_CITIES[b]=1;
+}
+/* Merkezde nehrin üzerinden atlamak yerine batı ve doğu kıyı geçitlerini kullan. */
+v57DisconnectCities('Taç Ovası','Eski Kaldarya');
+v57DisconnectCities('Eski Kaldarya','Kümüreçit');
+v57MarkPass('Taç Ovası','Gümüşkaya');
+v57MarkPass('Kümüreçit','Keleştepe');
+/* Dağları ve sınır ormanını tek hamlede geçen uzak bağlantıları çıkar. */
+v57DisconnectCities('Karhisar','Ayarkaet');
+v57DisconnectCities('Gökbeçit','Kışvadi');
+v57MarkPass('Gökbeçit','Ayarkaet');
+v57DisconnectCities('Gümüşpınar','Gölgeçit');
+v57MarkPass('Zümrütgeçit','Gölgeçit');
+v57DisconnectCities('Kervanyolu','Börü Geçit');
+v57MarkPass('Taşova','Börü Geçit');
+</script>
+<style>
+.capitalFlag{position:absolute;z-index:25;pointer-events:none;transform:translate(-50%,-50%);width:27px;height:27px;border:2px solid #fff2b0;border-radius:50%;background:#5c3418;color:#ffe895;display:grid;place-items:center;font-size:18px;line-height:1;box-shadow:0 1px 9px #000,0 0 8px #ffe895}
+.capitalFlag.lostCapital{filter:grayscale(1);opacity:.65}
+.relocatedCityLabel{position:absolute;z-index:18;pointer-events:none;transform:translate(-50%,-50%);min-width:102px;text-align:center;padding:4px 5px;border-radius:8px;background:#17331ff2;color:#fff;font:bold 15px Georgia,serif;text-shadow:1px 1px 3px #000;box-shadow:0 0 8px #17331f}
+</style>
+<script>
+/* V58 — Yeni başkentler, kral ordusu başlangıcı ve Batı'daki şehir yeri değişimi. */
+var V58_CAPITALS={
+ 'Aerion':'Thalor','Valdor':'Gölebimar','Eldoria':'Yeşiltepe',
+ 'Kaldarya Batı':'Solar','Zafran':'Çöl Tapınağı',
+ 'Kaldarya Merkez':'Eski Kaldarya','Vardun':'Kervanyolu',
+ 'Drakmir':'Ejder Zirvesi','Kaldarya Doğu':'Güneçtepe',
+ 'Lunaris':'Morova'
+};
+Object.keys(V58_CAPITALS).forEach(function(region){
+ var city=V58_CAPITALS[region];
+ if(K.info[city]&&ownerOf(city)===region)capitals[region]=city;
+});
+/* Solar ve Belvar'ın haritadaki iki yerini, tıklama alanlarıyla birlikte değiştir. */
+var v58Solar=K.info.Solar,v58Belvar=K.info.Belvar;
+if(v58Solar&&v58Belvar){
+ var v58OldSolar={x:v58Solar.x,y:v58Solar.y};
+ v58Solar.x=v58Belvar.x;v58Solar.y=v58Belvar.y;
+ v58Belvar.x=v58OldSolar.x;v58Belvar.y=v58OldSolar.y;
+ /* Şehir konumları değişince komşu yol bağlantıları da yeni konumla eşleşmeli. */
+ var v58SolarRoads=FIXED_ROADS.Solar.slice(),v58BelvarRoads=FIXED_ROADS.Belvar.slice();
+ Object.keys(FIXED_ROADS).forEach(function(city){
+  FIXED_ROADS[city]=FIXED_ROADS[city].map(function(n){
+   return n==='Solar'?'Belvar':n==='Belvar'?'Solar':n;
+  });
+ });
+ FIXED_ROADS.Solar=v58BelvarRoads.map(function(n){return n==='Solar'?'Belvar':n==='Belvar'?'Solar':n});
+ FIXED_ROADS.Belvar=v58SolarRoads.map(function(n){return n==='Solar'?'Belvar':n==='Belvar'?'Solar':n});
+}
+K.at=capitals[K.playerRegion];
+function v58RefreshCapitalFlags(){
+ Object.keys(capitals).forEach(function(region){
+  var city=capitals[region],c=K.info[city];if(!c)return;
+  var id='capitalFlag_'+region.replace(/[^A-Za-z0-9]/g,'_'),flag=document.getElementById(id);
+  if(!flag){flag=document.createElement('div');flag.id=id;el('stage').appendChild(flag)}
+  flag.className='capitalFlag'+(ownerOf(city)===region?'':' lostCapital');
+  flag.textContent='♛';flag.style.left=(c.x+25)+'px';flag.style.top=(c.y-27)+'px';
+  flag.title=region+' başkenti: '+city;
+ });
+}
+function v58MapLabels(){
+ [['Solar',v58Solar],['Belvar',v58Belvar]].forEach(function(item){
+  var c=item[1];if(!c)return;
+  var label=document.createElement('div');label.className='relocatedCityLabel';
+  label.textContent=item[0];label.style.left=c.x+'px';label.style.top=c.y+'px';
+  el('stage').appendChild(label);
+ });
+ var buttons=document.getElementsByClassName('settle');
+ for(var i=0;i<buttons.length;i++){
+  var name=buttons[i].getAttribute('data-city'),c=K.info[name];
+  if(c&&(name==='Solar'||name==='Belvar')){
+   buttons[i].style.left=c.x+'px';buttons[i].style.top=c.y+'px';
+  }
+ }
+}
+var v58Pawn=el('pawn'),v58Here=K.info[K.at];
+if(v58Pawn&&v58Here){v58Pawn.style.left=v58Here.x+'px';v58Pawn.style.top=v58Here.y+'px'}
+if(el('where'))el('where').textContent=K.at;
+function v58AfterBoot(){v58MapLabels();v58RefreshCapitalFlags()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',v58AfterBoot,false);
+else v58AfterBoot();
+var v58OldSetOwner=setOwner;
+setOwner=function(){var changed=v58OldSetOwner.apply(this,arguments);if(changed)v58RefreshCapitalFlags();return changed};
+v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
+</script>
+<style>
+.thalgrimExpansion{position:absolute;left:0;top:0;width:1536px;height:1024px;z-index:1;pointer-events:none}
+.northernTown{position:absolute;z-index:22;pointer-events:none;transform:translate(-50%,0);padding:2px 5px;background:#142438d9;border:1px solid #d9e8f3;border-radius:6px;color:#fff;font:bold 13px Georgia,serif;text-shadow:1px 1px 2px #000}
+.majorCityBadge{position:absolute;z-index:23;pointer-events:none;transform:translate(-50%,-50%);font-size:25px;filter:drop-shadow(0 2px 3px #000) drop-shadow(0 0 5px #ffdf74)}
+</style>
+<script>
+/* V59 — Kuzey krallığı genişlemesi ve düzeltilen başkent/ordu başlangıçları. */
+capitals.Eldoria='Yeşiltepe';
+var v59NorthernCities=[
+ {name:'Thalgrim',x:790,y:88,terrain:'dağ'},
+ {name:'Kuzeyhisar',x:554,y:73,terrain:'dağ'},
+ {name:'Karabel',x:849,y:69,terrain:'dağ'},
+ {name:'Sisbeli',x:1082,y:76,terrain:'dağ'}
+];
+v59NorthernCities.forEach(function(c){
+ if(K.info[c.name])return;
+ c.region='Thalgrim';c.type='Yerleşim';c.protector='Bağımsız';
+ DATA.push(c);K.info[c.name]=c;
+ settlements[c.name]={dev:24,status:'Huzurlu',governor:'Atanmamış',buildings:[],construction:null,
+  owner:'Thalgrim',originalOwner:'Thalgrim',occupied:false,siege:null};
+ FIXED_ROADS[c.name]=[];
+});
+capitals.Thalgrim='Thalgrim';
+function v59Connect(a,b){
  if(!K.info[a]||!K.info[b])return;
- if(!FIXED_ROADS[a])FIXED_ROADS[a]=[];
- if(!FIXED_ROADS[b])FIXED_ROADS[b]=[];
  if(FIXED_ROADS[a].indexOf(b)<0)FIXED_ROADS[a].push(b);
  if(FIXED_ROADS[b].indexOf(a)<0)FIXED_ROADS[b].push(a);
 }
-v56ConnectCities('Taç Ovası','Eski Kaldarya');
-v56ConnectCities('Eski Kaldarya','Kümüreçit');
+v57DisconnectCities('Gökbeçit','Ayarkaet');
+[['Kuzeyhisar','Karhisar'],['Thalgrim','Gökbeçit'],['Thalgrim','Ayarkaet'],
+ ['Thalgrim','Karabel'],['Karabel','Ayarkaet'],['Sisbeli','Kışvadi']].forEach(function(pair){v59Connect(pair[0],pair[1])});
+v57MarkPass('Thalgrim','Gökbeçit');v57MarkPass('Thalgrim','Ayarkaet');
+var v59OldCreateKings=createKings;
+createKings=function(){
+ v59OldCreateKings.apply(this,arguments);
+ var king=kingdomKings.Aerion,city=K.info['Köyice'];
+ if(king&&city){king.at=city.name;if(king.el){king.el.style.left=city.x+'px';king.el.style.top=city.y+'px'}}
+};
+function v59DrawNorth(){
+ var stage=el('stage');
+ var territory=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ territory.setAttribute('class','thalgrimExpansion');territory.setAttribute('viewBox','0 0 1536 1024');
+ territory.innerHTML='<path d="M 463 41 L 610 21 L 795 12 L 1010 16 L 1110 48 L 1102 126 L 1030 147 L 940 153 L 862 170 L 751 154 L 644 137 L 530 132 Z" fill="rgba(203,228,247,.14)" stroke="rgba(223,241,255,.75)" stroke-width="3" stroke-dasharray="8 6"/>';
+ stage.appendChild(territory);
+ v59NorthernCities.forEach(function(c){
+  var button=document.createElement('button');button.className='settle newCityMarker';
+  button.setAttribute('data-city',c.name);button.setAttribute('aria-label',c.name);
+  button.style.left=c.x+'px';button.style.top=c.y+'px';button.onclick=function(){tap(c.name)};
+  stage.appendChild(button);
+  if(c.name!=='Thalgrim'){
+   var label=document.createElement('span');label.className='northernTown';label.textContent=c.name;
+   label.style.left=c.x+'px';label.style.top=(c.y+15)+'px';stage.appendChild(label);
+  }
+ });
+ /* Büyük şehir işaretlerini yeni başkent konumunda görünür kıl. */
+ [['Thalgrim','🏰']].forEach(function(pair){
+  var c=K.info[pair[0]],badge=document.createElement('span');badge.className='majorCityBadge';
+  badge.textContent=pair[1];badge.style.left=(c.x-22)+'px';badge.style.top=(c.y-25)+'px';
+  stage.appendChild(badge);
+ });
+ v58RefreshCapitalFlags();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',v59DrawNorth,false);
+else v59DrawNorth();
+</script>
+<script>
+/* V60 — Arka plan resmindeki dört büyük şehir çizimini gerçek başkentlere taşı. */
+var V60_CASTLES=[
+ {name:'Eldoria',poly:[[576,326],[578,307],[584,306],[587,296],[595,301],[600,291],[606,302],[612,292],[618,303],[624,296],[630,302],[637,305],[641,321],[636,328],[606,331],[586,329]],dx:-92,dy:-194,texture:[550,440]},
+ {name:'Vardun',poly:[[897,333],[899,313],[905,310],[908,300],[914,305],[919,290],[925,302],[931,290],[937,301],[944,295],[950,306],[957,306],[964,321],[959,336],[931,338]],center:[931,315],target:[865,313],scale:.62,texture:[818,242]},
+ {name:'Drakmir',poly:[[1198,352],[1204,328],[1210,325],[1218,315],[1226,323],[1232,309],[1240,321],[1248,310],[1255,322],[1263,316],[1271,329],[1269,354],[1245,359],[1209,357]],dx:20,dy:-231,texture:[1194,234]},
+ {name:'Kaldarya Batı',poly:[[578,560],[579,546],[585,542],[590,534],[596,540],[602,530],[609,540],[615,533],[621,542],[630,540],[639,549],[639,562],[620,564],[592,564]],center:[607,549],target:[501,486],scale:.8,texture:[550,440]}
+];
+function v60InPolygon(x,y,p){
+ var inside=false;
+ for(var i=0,j=p.length-1;i<p.length;j=i++){
+  var a=p[i],b=p[j];
+  if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+ }
+ return inside;
+}
+function v60PaintCapitalCastles(context,source){
+ var width=1536,height=1024,off=document.createElement('canvas');
+ off.width=width;off.height=height;
+ var original=off.getContext('2d');original.drawImage(source,0,0,width,height);
+ V60_CASTLES.forEach(function(move){
+  var p=move.poly,minX=Math.floor(Math.min.apply(null,p.map(function(v){return v[0]}))),
+      maxX=Math.ceil(Math.max.apply(null,p.map(function(v){return v[0]}))),
+      minY=Math.floor(Math.min.apply(null,p.map(function(v){return v[1]}))),
+      maxY=Math.ceil(Math.max.apply(null,p.map(function(v){return v[1]})));
+  var tile=document.createElement('canvas');tile.width=24;tile.height=24;
+  tile.getContext('2d').drawImage(source,move.texture[0],move.texture[1],24,24,0,0,24,24);
+  context.save();context.beginPath();
+  p.forEach(function(v,i){if(i)context.lineTo(v[0],v[1]);else context.moveTo(v[0],v[1])});
+  context.closePath();context.clip();context.fillStyle=context.createPattern(tile,'repeat');
+  context.fillRect(minX,minY,maxX-minX+1,maxY-minY+1);context.restore();
+  context.save();
+  if(move.scale){
+   context.translate(move.target[0],move.target[1]);context.scale(move.scale,move.scale);
+   context.translate(-move.center[0],-move.center[1]);
+  }else context.translate(move.dx,move.dy);
+  context.beginPath();p.forEach(function(v,i){if(i)context.lineTo(v[0],v[1]);else context.moveTo(v[0],v[1])});
+  context.closePath();context.clip();context.drawImage(source,0,0,width,height);context.restore();
+ });
+}
+function v60InstallCapitalArt(){
+ var img=el('mapimg');if(!img)return;
+ function paint(){
+  if(!img.naturalWidth)return;
+  var canvas=document.createElement('canvas');canvas.width=1536;canvas.height=1024;
+  canvas.style.cssText='position:absolute;left:0;top:0;z-index:5;pointer-events:none';
+  canvas.setAttribute('aria-hidden','true');v60PaintCapitalCastles(canvas.getContext('2d'),img);
+  el('stage').appendChild(canvas);
+ }
+ if(img.complete&&img.naturalWidth)paint();else img.addEventListener('load',paint,{once:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',v60InstallCapitalArt,false);
+else v60InstallCapitalArt();
 </script>
 </body></html>
