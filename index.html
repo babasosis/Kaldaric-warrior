@@ -4444,4 +4444,17 @@ v28ChooseMove=function(region,unit){
  return unit&&next&&v63CanTraverse(unit.at,next,region)?next:null;
 };
 </script>
+<script>
+/* V64 — Görsel haritadaki köprü ve güney dağ geçidi gerçek sefer ağına bağlanır. */
+function v64GeographicCorridor(a,b){
+ if(!K.info[a]||!K.info[b])return;
+ if((FIXED_ROADS[a]||[]).indexOf(b)<0)FIXED_ROADS[a].push(b);
+ if((FIXED_ROADS[b]||[]).indexOf(a)<0)FIXED_ROADS[b].push(a);
+ v57MarkPass(a,b);
+}
+/* Selania ve Kuzey Kırları, haritada çizili Panama köprüsünün iki yakasıdır. */
+v64GeographicCorridor('Selania','Kuzey Kırları');
+/* Nifel ile Kızılkum arasındaki dağ sırtı yalnız belirlenmiş geçitten aşılır. */
+v64GeographicCorridor('Nifel','Kızılkum');
+</script>
 </body></html>
