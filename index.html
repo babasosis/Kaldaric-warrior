@@ -34,7 +34,7 @@ button,.stat{border:1px solid #64748b;border-radius:9px;background:#25334a;color
 <style id="v284-unit-layout">
 .kingPawn{z-index:36!important;transform:translate(-50%,-175%)!important}
 .aiGeneralPawn{z-index:34!important;transform:translate(-105%,-70%)!important}
-.playerGeneralPawn{position:absolute;z-index:35;width:34px;height:34px;min-height:0;padding:0;border-radius:50%;
+.playerGeneralPawn{position:absolute;z-index:35;width:44px;height:44px;min-height:0;padding:0;border-radius:50%;touch-action:manipulation;cursor:pointer;
 border:2px solid #d7b96a;background:#2c2235;color:#ffe7a3;transform:translate(5%,-70%)!important;
 font-size:17px;box-shadow:0 0 10px #000;transition:left .45s,top .45s}
 </style>
@@ -204,14 +204,14 @@ function addSoldiers(kind,i){
  if(K.gold<cost){say("💰 5 asker eklemek için 8 altın gerekiyor.");return}
  K.gold-=cost;a.soldiers+=count;sync();
  say("🛡 "+a.name+" ordusuna 5 asker eklendi. Bakım: "+armyUpkeep(a.soldiers)+" altın/tur.");
- if(kind==="king")openPlayerKing();else openGeneralArmy(i);
+ if(kind==="king")openPlayerKing();else openGeneralArmy(i,true);
 }
 function removeSoldiers(kind,i){
  var a=kind==="king"?K.kingArmy:generals[i];
  if(!a||a.soldiers<=0){say("Bu orduda çıkarılacak asker yok.");return}
  var count=Math.min(5,a.soldiers);a.soldiers-=count;sync();
  say("↩ "+a.name+" ordusundan "+count+" asker çıkarıldı. Yeni bakım: "+armyUpkeep(a.soldiers)+" altın/tur.");
- if(kind==="king")openPlayerKing();else openGeneralArmy(i);
+ if(kind==="king")openPlayerKing();else openGeneralArmy(i,true);
 }
 
 var generalPawns=[];
@@ -222,22 +222,22 @@ function createGeneralPawns(){
     g.at=starts[i]||K.at; g.movePoints=3; g.maxMove=3;
     var c=K.info[g.at]; if(!c)return;
     var b=document.createElement("button");
-    b.className="kingPawn"; b.textContent="⚔"; b.title=g.name+" • "+g.army;
+    b.className="playerGeneralPawn"; b.textContent="⚔"; b.title=g.name+" • "+g.army;
     b.style.left=c.x+"px"; b.style.top=c.y+"px";
     b.onclick=function(e){e.stopPropagation();openGeneralArmy(i)};
     el("stage").appendChild(b); g.el=b; generalPawns.push(b);
   });
 }
-function openGeneralArmy(i){var g=generals[i];K.activeGeneral=i;panel('<div class="row"><h2 style="flex:1">⚔ '+g.name+' • '+g.army+'</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>Konum:</b> '+g.at+'<br><b>Asker:</b> '+g.soldiers+'<br><b>Bakım:</b> '+armyUpkeep(g.soldiers)+' altın/tur<br><b>İkmal:</b> %'+g.supply+'<br><b>Moral:</b> %'+g.morale+'<br><b>General deneyimi:</b> '+generalExp(g)+'<br><b>Krallık eylem puanı:</b> '+actionText()+'</div><div class="row"><button class="ok" onclick="addSoldiers(\'general\','+i+')">＋ 5 Asker • 8 altın</button><button onclick="removeSoldiers(\'general\','+i+')">− 5 Asker Çıkar</button></div><button class="ok" onclick="generalMoveMode('+i+')">⚔ Bu Orduyu Hareket Ettir • 1 EP</button>')}
+function openGeneralArmy(i,refresh){var g=generals[i],box=el('panel');if(!g||!g.onDuty||!g.at||!g.el){say('⛔ Bu generalin etkin ordusu yok.');return}if(!refresh&&box.style.display==='block'&&box.dataset.generalArmy===String(i)){closePanel();return}K.activeGeneral=i;panel('<div class="row"><h2 style="flex:1">⚔ '+g.name+' • '+g.army+'</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>Konum:</b> '+g.at+'<br><b>Asker:</b> '+g.soldiers+'<br><b>Bakım:</b> '+armyUpkeep(g.soldiers)+' altın/tur<br><b>İkmal:</b> %'+g.supply+'<br><b>Moral:</b> %'+g.morale+'<br><b>General deneyimi:</b> '+generalExp(g)+'<br><b>Krallık eylem puanı:</b> '+actionText()+'</div><div class="row"><button class="ok" onclick="addSoldiers(\'general\','+i+')">＋ 5 Asker • 8 altın</button><button onclick="removeSoldiers(\'general\','+i+')">− 5 Asker Çıkar</button></div><button class="ok" onclick="generalMoveMode('+i+')">⚔ Bu Orduyu Hareket Ettir • 1 EP</button>');box.dataset.generalArmy=String(i)}
 function generalReachable(i){var g=generals[i],a=K.info[g.at],r=[];(FIXED_ROADS[a.name]||[]).forEach(function(n){var b=K.info[n];if(b&&movementCost(a,b,K.playerRegion)<99)r.push(n)});return r}
-function generalMoveMode(i){var g=generals[i];closePanel();if(!canSpendAction()){clearGlow();say("⛔ Bu tur krallığın eylem puanı kalmadı.");return}K.mode="generalMove";K.activeGeneral=i;clearGlow();glow(generalReachable(i),"reachable");say("⚔ "+g.name+" • geçerli komşu yerleşimler parlıyor. Hareket 1 krallık eylem puanı harcar.")}
-function moveGeneralTo(n){var i=K.activeGeneral,g=generals[i],a=K.info[g.at],b=K.info[n];if(!g||!b)return;var c=movementCost(a,b,K.playerRegion);if(c>=99){say("⛔ Bu general bu yerleşime doğrudan geçemez.");return}if(!spendAction("General hareketi"))return;g.at=n;g.el.style.left=b.x+"px";g.el.style.top=b.y+"px";K.mode="";clearGlow();say("⚔ "+g.name+" "+n+" konumuna ilerledi. Krallık eylem puanı: "+actionText());if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,g.army,g);else checkBattleAt(n,g)}
+function generalMoveMode(i){var g=generals[i];if(!g||!g.onDuty||!K.info[g.at]){say('⛔ Bu generalin etkin ordusu yok.');return}closePanel();if(!canSpendAction()){clearGlow();say("⛔ Bu tur krallığın eylem puanı kalmadı.");return}K.mode="generalMove";K.activeGeneral=i;clearGlow();glow(generalReachable(i),"reachable");say("⚔ "+g.name+" • geçerli komşu yerleşimler parlıyor. Hareket 1 krallık eylem puanı harcar.")}
+function moveGeneralTo(n){var i=K.activeGeneral,g=generals[i],a=g&&K.info[g.at],b=K.info[n];if(!g||!a||!b)return;var c=movementCost(a,b,K.playerRegion);if(c>=99){say(v65PassageMessage(g.at,n,K.playerRegion));return}if(!spendAction("General hareketi"))return;g.at=n;g.el.style.left=b.x+"px";g.el.style.top=b.y+"px";K.mode="";clearGlow();say("⚔ "+g.name+" "+n+" konumuna ilerledi. Krallık eylem puanı: "+actionText());if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,g.army,g);else checkBattleAt(n,g)}
 var diplomacy={"Kaldarya Batı":0,"Kaldarya Doğu":0,"Aerion":10,"Valdor":0,"Eldoria":35,"Thalgrim":5,"Vardun":-10,"Drakmir":-35,"Zafran":0,"Lunaris":12};
 function el(i){return document.getElementById(i)} function pts(){return document.getElementsByClassName("settle")}
 function clearGlow(){var a=pts();for(var i=0;i<a.length;i++)a[i].className="settle"}
 function say(t){el("msg").innerHTML=t;el("msg").style.display="block"}
 function closePanel(){el("panel").style.display="none"}
-function panel(t){el("panel").innerHTML=t;el("panel").style.display="block"}
+function panel(t){el("panel").dataset.generalArmy="";el("panel").innerHTML=t;el("panel").style.display="block"}
 function names(){return DATA.map(function(x){return x.name})}
 function dist(a,b){var dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy)}
 var militaryAccess={"Kaldarya Batı":true,"Kaldarya Doğu":true,"Aerion":false,"Valdor":false,"Eldoria":false,"Thalgrim":false,"Vardun":false,"Drakmir":false,"Zafran":false,"Lunaris":false};
@@ -356,7 +356,7 @@ function pawnTap(){openPlayerKing()}
 function openPlayerKing(){var a=K.kingArmy;panel('<div class="row"><h2 style="flex:1">♔ Kral Arven • Kral Ordusu</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>Konum:</b> '+K.at+'<br><b>Asker:</b> '+a.soldiers+'<br><b>Bakım:</b> '+armyUpkeep(a.soldiers)+' altın/tur<br><b>İkmal:</b> %'+a.supply+'<br><b>Moral:</b> %'+a.morale+'<br><b>Kral/Komutan deneyimi:</b> '+generalExp(a)+'<br><b>Krallık eylem puanı:</b> '+actionText()+'</div><div class="row"><button class="ok" onclick="addSoldiers(\'king\',0)">＋ 5 Asker • 8 altın</button><button onclick="removeSoldiers(\'king\',0)">− 5 Asker Çıkar</button></div><button class="ok" onclick="kingMoveMode()">♔ Kral Ordusunu Hareket Ettir • 1 EP</button>')}
 function kingMoveMode(){closePanel();if(!canSpendAction()){clearGlow();say("⛔ Bu tur krallığın eylem puanı kalmadı.");return}K.mode="move";var r=reachable();glow(r,"reachable");say("♔ Kral Arven hareket ediyor • Krallık eylem puanı: <b>"+actionText()+"</b>.")}
 function tap(n){if(K.mode==="move"){moveTo(n);return}if(K.mode==="generalMove"){moveGeneralTo(n);return}K.mode="";clearGlow();openSettlement(n)}
-function moveTo(n){var a=K.info[K.at],b=K.info[n];if(!b)return;var c=movementCost(a,b,K.playerRegion);if(c>=99){say("⛔ Bu yerleşime doğrudan geçiş yok.");return}if(!spendAction("Kral hareketi"))return;K.at=n;el("pawn").style.left=b.x+"px";el("pawn").style.top=b.y+"px";el("where").textContent=n;K.mode="";clearGlow();say("♔ <b>"+n+"</b> konumuna ulaştın. Krallık eylem puanı: <b>"+actionText()+"</b>");setTimeout(function(){if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,"Kral Ordusu",K.kingArmy);else checkBattleAt(n,K.kingArmy)},180)}
+function moveTo(n){var a=K.info[K.at],b=K.info[n];if(!b)return;var c=movementCost(a,b,K.playerRegion);if(c>=99){say(v65PassageMessage(K.at,n,K.playerRegion));return}if(!spendAction("Kral hareketi"))return;K.at=n;el("pawn").style.left=b.x+"px";el("pawn").style.top=b.y+"px";el("where").textContent=n;K.mode="";clearGlow();say("♔ <b>"+n+"</b> konumuna ulaştın. Krallık eylem puanı: <b>"+actionText()+"</b>");setTimeout(function(){if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,"Kral Ordusu",K.kingArmy);else checkBattleAt(n,K.kingArmy)},180)}
 
 var territoryShapes=[
  "polygon(14% 8%,72% 4%,96% 31%,88% 78%,58% 96%,17% 87%,3% 48%)",
@@ -3119,7 +3119,7 @@ var v42Pending=null;
 function v42Attack(from,to,army){
  var owner=ownerOf(to);
  if(!owner||owner===K.playerRegion||!v331CanAttackNow(K.playerRegion,owner)||!v312Defenders(owner,to).length)return false;
- if(movementCost(K.info[from],K.info[to],K.playerRegion)>=99){say('⛔ Bu şehre geçiş yok.');return true}
+ if(movementCost(K.info[from],K.info[to],K.playerRegion)>=99){say(v65PassageMessage(from,to,K.playerRegion));return true}
  if(!spendAction('Saldırı'))return true;
  K.mode='';clearGlow();
  v42Pending={from:from,to:to,army:army,enemy:owner};
@@ -4456,5 +4456,18 @@ function v64GeographicCorridor(a,b){
 v64GeographicCorridor('Selania','Kuzey Kırları');
 /* Nifel ile Kızılkum arasındaki dağ sırtı yalnız belirlenmiş geçitten aşılır. */
 v64GeographicCorridor('Nifel','Kızılkum');
+</script>
+<script>
+/* V65 — Kapalı sınır, savaş bekleme süresi ve gerçek yol eksikliği ayrı anlatılır. */
+function v65PassageMessage(from,to,armyOwner){
+ if(!K.info[from]||!K.info[to]||(FIXED_ROADS[from]||[]).indexOf(to)<0)
+  return '⛔ '+from+' ile '+to+' arasında doğrudan kara yolu yok.';
+ var owner=ownerOf(to);
+ if(owner&&owner!==armyOwner&&v331Authorized(armyOwner,owner)&&!v331CanAttackNow(armyOwner,owner))
+  return '⌛ '+owner+' ile savaş ilan edildi. '+to+' saldırısı sonraki tur açılacak; iki ordu da bu tur sınırda bekler.';
+ if(owner&&owner!==armyOwner&&!v331Authorized(armyOwner,owner)&&!hasMilitaryAccess(armyOwner,owner))
+  return '⛔ '+owner+' sınırı kapalı. Geçiş için savaş ya da askerî geçiş anlaşması gerekiyor.';
+ return '⛔ '+to+' konumuna geçiş şu anda mümkün değil.';
+}
 </script>
 </body></html>
