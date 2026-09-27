@@ -3155,7 +3155,7 @@ function v42ResolveAssault(){
   }
  }
  recordBattle(q.enemy,won,q.to,lossP,Math.max(0,enemyBefore-enemyAfter));
- panel('<div class="row"><h2 style="flex:1">'+(won?'🏆 ZAFER':'⚔ YENİLGİ')+'</h2><button onclick="closePanel()">✕</button></div><div class="card">'+q.to+' • '+(won?'Savunma aşıldı.':'Savunma sürdü; fetih gerçekleşmedi.')+'<br>Kayıplar: '+lossP+' / '+Math.max(0,enemyBefore-enemyAfter)+(q.army.soldiers<=0?' • Ordu dağıldı.':'')+'</div>');
+ panel('<div class="row"><h2 style="flex:1">'+(won?'🏆 ZAFER':'⚔ YENİLGİ')+'</h2><button onclick="closePanel()">✕</button></div><div class="card">'+q.to+' • '+(won?'Savunma aşıldı.':'Savunma sürdü; fetih gerçekleşmedi.')+'<br>Kayıplar: '+lossP+' / '+Math.max(0,enemyBefore-enemyAfter)+(succeeded?' • Önceki kralın ordusu dağıldı; yeni hükümdarın ordusu ayrı kuruldu.':q.army.soldiers<=0?' • Ordu dağıldı.':'')+'</div>');
  sync()
 }
 var v42OldMoveTo=moveTo;
@@ -5999,7 +5999,7 @@ prisonHTML=function(){
 v66LayoutArmies=function(){
  var groups={},unitLabel=new Map();function add(position,unit,node){
   if(!position||!K.info[position]||!node||!unit||unit.soldiers<=0||unit.dead||unit.captured||unit.alive===false)return;
-  unitLabel.set(node,unit.name||unit.army||'Ordu');
+  unitLabel.set(node,unit===K.kingArmy?K.kingName+' • Kral Ordusu':unit.name||unit.army||'Ordu');
   (groups[position]||(groups[position]=[])).push(node);
  }
  K.kingArmy.at=K.at;add(K.at,K.kingArmy,el('pawn'));
@@ -6014,6 +6014,7 @@ v66LayoutArmies=function(){
    node.style.left=(p.x+Math.round(Math.cos(angle)*radius))+'px';
    node.style.top=(p.y+Math.round(Math.sin(angle)*radius))+'px';node.style.display='block';
    node.title=(unitLabel.get(node)||node.textContent||'Ordu')+' • Konum: '+position;
+   if(node===el('pawn'))node.setAttribute('aria-label',K.kingName+' ve Kral Ordusu');
   });
  });
 };
@@ -6168,5 +6169,56 @@ v42Attack=function(from,to,army){
  }
  return handled;
 };
+</script>
+<script>
+/* V84 — İlk tur general düğmeleri, savaş diplomasisi ve olay duyuruları. */
+var v84CreateAIGeneralPawn=v28CreateAIGeneralPawn;
+v28CreateAIGeneralPawn=function(region,unit){
+ var result=v84CreateAIGeneralPawn.apply(this,arguments);
+ if(unit&&unit.el)unit.el.onclick=function(e){e.stopPropagation();v66EnemyGeneralPanel(region,unit)};
+ return result;
+};
+var v84InitAIArmies=v28InitAIArmies;
+v28InitAIArmies=function(){
+ var result=v84InitAIArmies.apply(this,arguments);
+ v66WireEnemyGenerals();v66LayoutArmies();return result;
+};
+var v84TreatyButtons=v30TreatyButtons;
+v30TreatyButtons=function(other){
+ if(atWar(K.playerRegion,other))return '<span class="small">⚔ Savaş sürüyor; anlaşmalar ancak barıştan sonra teklif edilebilir.</span>';
+ return v84TreatyButtons(other);
+};
+var v84Important=v67Important;
+v67Important=function(message){
+ return v84Important(message)||/savaş ilanı yürürlüğe girdi|barış yaptı|barışı kabul etti|barış teklifini kabul etti/i.test(message);
+};
+function v84EndButton(){
+ var button=el('end');if(!button)return;
+ button.disabled=!!K.gameOver;
+ button.textContent=K.gameOver?'Oyun Bitti':'Turu Bitir';
+}
+var v84Sync=sync;
+sync=function(){var result=v84Sync.apply(this,arguments);v84EndButton();return result};
+var v84EndTurn=endTurn;
+endTurn=function(){
+ var before=K.turn,result=v84EndTurn.apply(this,arguments);
+ if(K.turn!==before){
+  var previousFirst=V67_IMPORTANT[0];
+  v67ShowEvents();
+  if(V67_IMPORTANT[0]!==previousFirst){
+   var current=V67_IMPORTANT.filter(function(e){return e.year===K.year}).slice(0,12);
+   panel('<div class="row"><h2 style="flex:1">📜 Yıl '+K.year+' • Önemli Olaylar</h2><button onclick="closePanel()" aria-label="Kapat">✕</button></div>'+
+    current.map(function(e){return '<div class="card">'+v37Safe(e.text)+'</div>'}).join('')+
+    '<div class="small">Hanedan kararlarına 📜 Olaylar bölümünden ulaşabilirsiniz.</div>');
+  }else{
+   var box=el('panel'),heading=box&&box.querySelector('h2');
+   var old=heading&&/Yıl (\d+) • Önemli Olaylar/.exec(heading.textContent);
+   if(old&&Number(old[1])!==K.year)closePanel();
+  }
+ }
+ v84EndButton();
+ return result;
+};
+v84EndButton();
 </script>
 </body></html>
