@@ -1846,7 +1846,6 @@ function v321KaldaryaAccessIntegrity(){
 }
 var v321EndTurn=endTurn;
 endTurn=function(){v321KaldaryaAccessIntegrity();var z=v321EndTurn.apply(this,arguments);v321KaldaryaAccessIntegrity();return z};
-setTimeout(v321KaldaryaAccessIntegrity,1000);
 </script>
 <script>
 /* ===== V34.0 — SAVAŞ MERKEZİ + ZORUNLU SAVAŞ/FETİH UYARILARI ===== */
@@ -5899,5 +5898,275 @@ v321KaldaryaAccessIntegrity=function(){};
 if(K.kingName==='Kral Arven')dynasty.forEach(function(person){
  if(person.name==='Prens Edric'&&!person.parentKing)person.parentKing='Kral Arven';
 });
+</script>
+<style id="v81-events-style">
+#bar .dockActions #choose{flex:1.25 1 auto;background:#374260;border-color:#d9be77;color:#fff1c8}
+#stage .v81ArmyPin{width:26px!important;height:26px!important;min-height:0!important;font-size:14px!important;line-height:22px!important;transform:translate(-50%,-50%)!important;transition:left .2s,top .2s}
+#stage .v81CityName{position:absolute;z-index:23;pointer-events:none;transform:translate(-50%,-50%);font:bold 13px Georgia,serif;color:#f9ecc8;text-shadow:0 1px 3px #000,1px 1px #000,-1px -1px #000}
+#stage .v81CityName:before{content:'🏘';display:block;text-align:center;font-size:18px;line-height:18px}
+</style>
+<script>
+/* V81 — Ortak yol, diplomasi ve konum kuralları. */
+(function(){
+ var city=K.info['Yaşlıhisar'],button=document.querySelector('.settle[data-city="Yaşlıhisar"]');
+ if(city&&button){city.x=867;city.y=422;button.style.left='867px';button.style.top='422px';
+  var label=document.createElement('span');label.className='v81CityName';label.textContent='Yaşlıhisar';
+  label.style.left='867px';label.style.top='440px';el('stage').appendChild(label);
+  v57DisconnectCities('Yaşlıhisar','Kümüreçit');v57DisconnectCities('Yaşlıhisar','Kızılkaya');
+  v64GeographicCorridor('Akpınar','Yaşlıhisar');v64GeographicCorridor('Yaşlıhisar','Börü Geçit');
+ }
+ v64GeographicCorridor('Konukgeçit','Kumtepe');
+ if(K.turn===1){
+  var west='Kaldarya Batı',east='Kaldarya Doğu';
+  v30D(west,east).treaties.access=true;
+  /* Başlangıçta bu üç krallık dışındaki askerî geçişler açık kalmaz. */
+  Object.keys(V30_DIP).forEach(function(key){
+   var pair=key.split('||');
+   if(pair.length===2&&!(isKaldaryaRegion(pair[0])&&isKaldaryaRegion(pair[1])))V30_DIP[key].treaties.access=false;
+  });
+  Object.keys(militaryAccess).forEach(function(r){if(!isKaldaryaRegion(r))militaryAccess[r]=false});
+ }
+})();
+
+function v81Relation(a,b){return v30D(a,b).relation}
+function v81TravelPermit(a,b){
+ return !!(a&&b&&(a===b||!atWar(a,b)&&(v30Has(a,b,'access')||v81Relation(a,b)>50)));
+}
+hasMilitaryAccess=function(a,b){return v81TravelPermit(a,b)};
+borderPermission=function(a,b){return a===b||v331Authorized(a,b)||v81TravelPermit(a,b)};
+v63CanTraverse=function(from,to,armyOwner){
+ if(!armyOwner||!K.info[from]||!K.info[to]||
+   (FIXED_ROADS[from]||[]).indexOf(to)<0||(FIXED_ROADS[to]||[]).indexOf(from)<0)return false;
+ var source=ownerOf(from),target=ownerOf(to);
+ if(!target)return false;
+ if(source&&source!==armyOwner&&!v331Authorized(armyOwner,source)&&!v81TravelPermit(armyOwner,source))return false;
+ if(target===armyOwner)return true;
+ return v331Authorized(armyOwner,target)?v331CanAttackNow(armyOwner,target):v81TravelPermit(armyOwner,target);
+};
+v28CanEnter=function(region,to,from){
+ if(from)return v63CanTraverse(from,to,region);
+ var owner=ownerOf(to);return !!owner&&(owner===region||
+  (v331Authorized(region,owner)?v331CanAttackNow(region,owner):v81TravelPermit(region,owner)));
+};
+movementCost=function(a,b,region){return a&&b&&v63CanTraverse(a.name,b.name,region)?1:99};
+politicalLink=function(a,b,region){return !!(a&&b&&v63CanTraverse(a.name,b.name,region))};
+var v81PreviousEvacuate=v41Evacuate;
+v41Evacuate=function(region,foreign){
+ if(v81TravelPermit(region,foreign)||v331Authorized(region,foreign))return 0;
+ return v81PreviousEvacuate.apply(this,arguments);
+};
+v65PassageMessage=function(from,to,region){
+ if(!K.info[from]||!K.info[to]||(FIXED_ROADS[from]||[]).indexOf(to)<0)
+  return '⛔ '+from+' ile '+to+' arasında kara yolu yok.';
+ var o=ownerOf(to);
+ if(v331Authorized(region,o)&&!v331CanAttackNow(region,o))return '⌛ Saldırı gelecek tur açılacak.';
+ if(!v81TravelPermit(region,o)&&!v331Authorized(region,o))
+  return '⛔ '+o+' toprağına geçmek için askerî geçiş veya +50 üzeri ilişki gerekiyor.';
+ return '⛔ Mevcut konumdan bu hedefe geçilemiyor.';
+};
+/* Evlilik yalnızca ilişkiyi değiştirir; anlaşma veya savaş izni oluşturmaz. */
+
+var v81PreviousBuild=startBuild;
+startBuild=function(name){
+ var st=settlements[K.selectedCity];
+ if(st&&st.construction)return say('⏳ '+st.construction.name+' inşaatı bitmeden başka bina başlatılamaz.');
+ return v81PreviousBuild.apply(this,arguments);
+};
+var v81PreviousBuildMenu=buildMenu;
+buildMenu=function(){
+ v81PreviousBuildMenu();var st=settlements[K.selectedCity],box=el('panel');
+ if(!st||!box||!playerControls(K.selectedCity))return;
+ if(st.construction){
+  box.innerHTML='<div class="card"><b>🔨 İnşaat sürüyor: '+v37Safe(st.construction.name)+'</b><div class="small">'+st.construction.left+' tur kaldı. İnşaat bitene kadar yeni bina başlatılamaz.</div></div>'+box.innerHTML;
+  box.querySelectorAll('.build button').forEach(function(b){b.disabled=true;b.title='Önce mevcut inşaat tamamlanmalı'});
+ }
+};
+
+/* Yönetim ve hapishane aynı esir kaydını gösterir. Düşmana düşen kendi üyelerimiz farklı listededir. */
+var v81PreviousPrison=prisonHTML;
+prisonHTML=function(){
+ var held=K.prisoners.filter(function(p){return p.alive}),
+     captives=(K.familyCaptives||[]).filter(function(c){return c.alive&&c.region===K.playerRegion});
+ var h='<div class="card"><b>⛓ Elimizde tutulan esirler</b></div>'+
+  (held.length?v81PreviousPrison():'<div class="card">Elimizde esir bulunmuyor.</div>');
+ if(captives.length)h+='<div class="card"><b>⛓ Yabancı hapishanelerdeki hanedan üyelerimiz</b></div>'+captives.map(function(c){
+  var i=K.familyCaptives.indexOf(c);return '<div class="card">'+v37Safe(c.person.name)+' • '+v37Safe(c.captor)+' esiri <button onclick="v72PayRansom('+i+')">Fidye Öde • 24 altın</button></div>';
+ }).join('');
+ return h;
+};
+
+/* Ordu kayıtları ve harita aynı şehir merkezini kullanır; çakışan simgeler merkez çevresinde dizilir. */
+v66LayoutArmies=function(){
+ var groups={},unitLabel=new Map();function add(position,unit,node){
+  if(!position||!K.info[position]||!node||!unit||unit.soldiers<=0||unit.dead||unit.captured||unit.alive===false)return;
+  unitLabel.set(node,unit.name||unit.army||'Ordu');
+  (groups[position]||(groups[position]=[])).push(node);
+ }
+ K.kingArmy.at=K.at;add(K.at,K.kingArmy,el('pawn'));
+ generals.forEach(function(u){if(u.onDuty)add(u.at,u,u.el)});
+ Object.keys(kingdomKings).forEach(function(r){var u=kingdomKings[r];add(u.at,u,u.el)});
+ Object.keys(V28_AI).forEach(function(r){(V28_AI[r].generals||[]).forEach(function(u){add(u.at,u,u.el)})});
+ Object.keys(groups).forEach(function(position){
+  var p=K.info[position],nodes=groups[position];
+  nodes.forEach(function(node,i){
+   var angle=(i/nodes.length)*Math.PI*2,radius=nodes.length===1?0:Math.min(39,22+nodes.length*2);
+   node.classList.remove('v66Stacked');node.classList.add('v81ArmyPin');
+   node.style.left=(p.x+Math.round(Math.cos(angle)*radius))+'px';
+   node.style.top=(p.y+Math.round(Math.sin(angle)*radius))+'px';node.style.display='block';
+   node.title=(unitLabel.get(node)||node.textContent||'Ordu')+' • Konum: '+position;
+  });
+ });
+};
+var v81PreviousSync=sync;
+sync=function(){var result=v81PreviousSync.apply(this,arguments);v66LayoutArmies();return result};
+var v81PreviousEndTurn=endTurn;
+endTurn=function(){var before=K.turn,result=v81PreviousEndTurn.apply(this,arguments);if(K.turn!==before)v66LayoutArmies();return result};
+
+/* Asker sayısı temel güçtür; moral, ikmal, arazi ve komutan etkileri ölçülü kalır. */
+var v81PreviousStrength=v31Strength;
+v31Strength=function(unit,city,defending){
+ if(!unit||unit.soldiers<=0)return 0;
+ var factor=v81PreviousStrength(unit,city,defending)/unit.soldiers;
+ return unit.soldiers*Math.max(.72,Math.min(1.32,factor));
+};
+var v81PreviousPower=battlePower;
+battlePower=function(unit,terrain){
+ if(!unit||unit.soldiers<=0)return 0;
+ var factor=v81PreviousPower(unit,terrain)/(unit.soldiers*10);
+ return unit.soldiers*10*Math.max(.72,Math.min(1.32,factor));
+};
+
+/* Yeni savaş açılırken her iki krallığın mevcut anlaşmaları temizlenir. */
+function v81BreakTreaties(a,b){
+ var t=v30D(a,b).treaties;
+ Object.keys(t).forEach(function(type){t[type]=false});
+ if(a===K.playerRegion||b===K.playerRegion){var other=a===K.playerRegion?b:a;
+  if(treaties[other])Object.keys(treaties[other]).forEach(function(type){treaties[other][type]=false});
+  militaryAccess[other]=false;
+ }
+}
+var v81PreviousWar=setWar;
+setWar=function(a,b,on){var was=v331Authorized(a,b),result=v81PreviousWar.apply(this,arguments);
+ if(on&&!was&&v331Authorized(a,b))v81BreakTreaties(a,b);return result};
+var v81PreviousAIWar=v35SetWar;
+v35SetWar=function(a,b,on){var was=v331Authorized(a,b),result=v81PreviousAIWar.apply(this,arguments);
+ if(on&&!was&&v331Authorized(a,b))v81BreakTreaties(a,b);return result};
+
+/* Şehir seçme düğmesinin yerinde olay günlüğü; şehir seçimi bu ekrandan erişilir. */
+function v81Events(){
+ var recent=(V67_IMPORTANT||[]).slice(0,15),petitions=(K.dynastyPetitions||[]).filter(function(e){return !e.done}),disputes=(K.successionDisputes||[]).filter(function(e){return !e.done&&e.region===K.playerRegion});
+ var h='<div class="row"><h2 style="flex:1">📜 Dinamik Olaylar</h2><button onclick="closePanel()" aria-label="Kapat">✕</button></div>'+
+  '<div class="row"><button onclick="chooseMode();closePanel()">🏰 Şehir Seç</button><button onclick="openCapital(\'family\')">👑 Hanedan</button></div>';
+ petitions.forEach(function(e){var i=K.dynastyPetitions.indexOf(e);h+='<div class="card"><b>⚠ '+v37Safe(e.name)+' yetki istiyor</b><div class="small">Kararın hanedan ilişkilerini ve iç savaş riskini etkiler.</div><div class="row"><button onclick="v73ResolvePetition('+i+',\'yetki\');v81Events()">Yetki ver • 15 altın</button><button onclick="v73ResolvePetition('+i+',\'gorus\');v81Events()">Görüş • 1 EP</button><button onclick="v73ResolvePetition('+i+',\'reddet\');v81Events()">Reddet</button></div></div>'});
+ disputes.forEach(function(e){var i=K.successionDisputes.indexOf(e);h+='<div class="card"><b>👑 '+v37Safe(e.rival)+' taht iddiasında</b><div class="row"><button onclick="v74ResolveDispute('+i+',\'uzlas\');v81Events()">Uzlaş • 18 altın</button><button onclick="v74ResolveDispute('+i+',\'savun\');v81Events()">Kralı destekle • 1 EP</button><button onclick="v74ResolveDispute('+i+',\'reddet\');v81Events()">Reddet</button></div></div>'});
+ h+=recent.length?recent.map(function(e){return '<div class="card">Yıl '+e.year+' • '+v37Safe(e.text)+'</div>'}).join(''):'<div class="card">Henüz önemli olay kaydı yok.</div>';
+ panel(h);
+}
+var v81Choose=el('choose');if(v81Choose){v81Choose.textContent='📜 Olaylar';v81Choose.onclick=function(){v81Events();return false}};
+var v81PreviousImportant=v67Important;
+v67Important=function(message){return v81PreviousImportant(message)||/doğdu|evlendi|hanedan.*talep|veraset|taht iddiası|hanedanında/i.test(message)};
+v66LayoutArmies();
+</script>
+<script>
+/* V83 — Savaş ve anlaşmalar aynı krallık çifti arasında birlikte kalamaz. */
+function v83ClearWartimeTreaties(){
+ var regions=v283Regions();
+ for(var i=0;i<regions.length;i++)for(var j=i+1;j<regions.length;j++){
+  var a=regions[i],b=regions[j];
+  if(!v331Authorized(a,b))continue;
+  var d=v30D(a,b),active=Object.keys(d.treaties).some(function(type){return !!d.treaties[type]});
+  if(active||a===K.playerRegion||b===K.playerRegion)v81BreakTreaties(a,b);
+  var state=V48_RELATIONS[v30Key(a,b)];
+  if(state)state.nonAggressionUntil=0;
+ }
+}
+var v83PlayerWar=setWar;
+setWar=function(a,b,on){
+ var result=v83PlayerWar.apply(this,arguments);
+ if(on)v83ClearWartimeTreaties();
+ return result;
+};
+var v83AIWar=v35SetWar;
+v35SetWar=function(a,b,on){
+ var result=v83AIWar.apply(this,arguments);
+ if(on)v83ClearWartimeTreaties();
+ return result;
+};
+var v83Treaty=v30Treaty;
+v30Treaty=function(a,b,type,on){
+ if(on&&v331Authorized(a,b)){
+  if(a===K.playerRegion||b===K.playerRegion)say('⚔ Savaş sürerken bu krallıkla anlaşma imzalanamaz.');
+  return false;
+ }
+ return v83Treaty.apply(this,arguments);
+};
+v83ClearWartimeTreaties();
+</script>
+<script>
+/* V82 — Doğum kararı, hanedan olayları ve birleşik muharebe değerlendirmesi. */
+K.birthDecisions=K.birthDecisions||[];
+var v82PreviousAgePlayer=v67AgePlayer;
+v67AgePlayer=function(){
+ var known=new Set(dynasty.map(function(p){return p.name}));
+ var result=v82PreviousAgePlayer.apply(this,arguments);
+ dynasty.forEach(function(p){
+  if(known.has(p.name)||!p.alive||p.age!==0||p.parentKing!==K.kingName)return;
+  K.birthDecisions.push({name:p.name,turn:K.turn,done:false});
+  K.news.unshift('👶 '+p.name+' doğdu. Ailenin yeni üyesi için yetiştirme kararı bekliyor.');
+ });
+ return result;
+};
+function v82ChooseUpbringing(i,choice){
+ var e=K.birthDecisions[i];if(!e||e.done)return;
+ var child=dynasty.find(function(p){return p.name===e.name&&p.alive});if(!child){e.done=true;return}
+ var profile=v73Profile(K.playerRegion,child),label;
+ if(choice==='ordu'){
+  if(K.gold<8)return say('⛔ Askerî eğitim için 8 altın gerekiyor.');
+  K.gold-=8;profile.tactics=v73Bound(profile.tactics+12,0,100);profile.courage=v73Bound(profile.courage+8,0,100);
+  K.armyLoyal=v73Bound(K.armyLoyal+2,0,100);label='Askerî eğitim';
+ }else if(choice==='saray'){
+  if(K.gold<8)return say('⛔ Saray eğitimi için 8 altın gerekiyor.');
+  K.gold-=8;profile.diplomacy=v73Bound(profile.diplomacy+12,0,100);
+  profile.stewardship=v73Bound(profile.stewardship+8,0,100);K.peopleHappy=v73Bound(K.peopleHappy+2,0,100);label='Saray eğitimi';
+ }else if(choice==='serbest'){
+  profile.ambition=v73Bound(profile.ambition+8,0,100);
+  child.stress=v73Bound((child.stress||10)-5,0,100);label='Serbest yetişme';
+ }else return;
+ child.upbringing=choice;v73Memory(child,label+' seçildi.');e.done=true;
+ K.news.unshift('📜 '+child.name+' için '+label+' kararı verildi; kişilik ve ülke değerleri etkilendi.');
+ sync();v81Events();
+}
+var v82PreviousEvents=v81Events;
+v81Events=function(){
+ v82PreviousEvents();var box=el('panel');if(!box)return;
+ var pending=K.birthDecisions.filter(function(e){return !e.done});
+ var cards=pending.map(function(e){var i=K.birthDecisions.indexOf(e);
+  return '<div class="card"><b>👶 '+v37Safe(e.name)+' doğdu</b><div class="small">Hanedan çocuğunun yetişme yolu ilerideki kişiliğini etkileyecek.</div><div class="row">'+
+  '<button onclick="v82ChooseUpbringing('+i+',\'ordu\')">⚔ Askerî eğitim • 8 altın<br><small>Taktik +12, cesaret +8, ordu sadakati +2</small></button>'+
+  '<button onclick="v82ChooseUpbringing('+i+',\'saray\')">📜 Saray eğitimi • 8 altın<br><small>Diplomasi +12, yönetim +8, halk mutluluğu +2</small></button>'+
+  '<button onclick="v82ChooseUpbringing('+i+',\'serbest\')">🌿 Serbest yetişme<br><small>Hırs +8, baskı -5</small></button></div></div>';
+ }).join('');
+ if(cards)box.innerHTML=box.innerHTML.replace('</div>', '</div>'+cards);
+};
+var v82PreviousTurn=endTurn;
+endTurn=function(){
+ var prior=K.turn,result=v82PreviousTurn.apply(this,arguments);
+ if(K.turn!==prior&&(K.birthDecisions.some(function(e){return !e.done&&e.turn===K.turn})||
+  K.dynastyPetitions.some(function(e){return !e.done&&e.turn===K.turn})||
+  K.successionDisputes.some(function(e){return !e.done&&e.turn===K.turn})))v81Events();
+ return result;
+};
+var v82PreviousAttack=v42Attack;
+v42Attack=function(from,to,army){
+ var handled=v82PreviousAttack.apply(this,arguments);
+ if(handled&&v42Pending&&v42Pending.from===from&&v42Pending.to===to){
+  var defenders=v312Defenders(v42Pending.enemy,to),enemySoldiers=defenders.reduce(function(n,u){return n+u.soldiers},0),
+      attacking=v31Strength(army,to,false),defending=defenders.reduce(function(n,u){return n+v31Strength(u,to,true)},0)*(PASS_CITIES[to]?1.15:1),box=el('panel');
+  if(box)box.innerHTML+='<div class="card"><b>Toplam asker:</b> '+army.soldiers+' / '+enemySoldiers+
+   ' · Savunan ordu: '+defenders.length+'<br><b>Hesaplanan güç:</b> '+Math.round(attacking)+' / '+Math.round(defending)+
+   '<div class="small">Her ordunun askerleri toplanır; ordu sayısı tek başına güç vermez. Moral, ikmal, arazi ve komutan etkileri sınırlı oranlarda uygulanır.</div></div>';
+ }
+ return handled;
+};
 </script>
 </body></html>
