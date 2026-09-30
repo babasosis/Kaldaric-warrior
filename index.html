@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=4,user-scalable=yes,viewport-fit=cover">
-<title>Kaldarya V85 — Entrika ve Hanedan</title>
+<title>Kaldarya V86 — Savaş ve Hanedan</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;background:#050a12;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
 #bar{height:58px;padding:7px 8px;display:flex;align-items:center;gap:7px;overflow-x:auto;background:#111b2d;position:relative;z-index:100}
@@ -372,7 +372,7 @@ function pawnTap(){openPlayerKing()}
 function openPlayerKing(){var a=K.kingArmy;panel('<div class="row"><h2 style="flex:1">♔ Kral Arven • Kral Ordusu</h2><button onclick="closePanel()">✕</button></div><div class="card"><b>Konum:</b> '+K.at+'<br><b>Asker:</b> '+a.soldiers+'<br><b>Bakım:</b> '+armyUpkeep(a.soldiers)+' altın/tur<br><b>İkmal:</b> %'+a.supply+'<br><b>Moral:</b> %'+a.morale+'<br><b>Kral/Komutan deneyimi:</b> '+generalExp(a)+'<br><b>Krallık eylem puanı:</b> '+actionText()+'</div><div class="row"><button class="ok" onclick="addSoldiers(\'king\',0)">＋ 5 Asker • 8 altın</button><button onclick="removeSoldiers(\'king\',0)">− 5 Asker Çıkar</button></div><button class="ok" onclick="kingMoveMode()">♔ Kral Ordusunu Hareket Ettir • 1 EP</button>')}
 function kingMoveMode(){closePanel();if(!canSpendAction()){clearGlow();say("⛔ Bu tur krallığın eylem puanı kalmadı.");return}K.mode="move";var r=reachable();glow(r,"reachable");say("♔ Kral Arven hareket ediyor • Krallık eylem puanı: <b>"+actionText()+"</b>.")}
 function tap(n){if(K.mode==="move"){moveTo(n);return}if(K.mode==="generalMove"){moveGeneralTo(n);return}K.mode="";clearGlow();openSettlement(n)}
-function moveTo(n){var a=K.info[K.at],b=K.info[n];if(!b)return;var c=movementCost(a,b,K.playerRegion);if(c>=99){say(v65PassageMessage(K.at,n,K.playerRegion));return}if(!spendAction("Kral hareketi"))return;K.at=n;el("pawn").style.left=b.x+"px";el("pawn").style.top=b.y+"px";el("where").textContent=n;K.mode="";clearGlow();say("♔ <b>"+n+"</b> konumuna ulaştın. Krallık eylem puanı: <b>"+actionText()+"</b>");setTimeout(function(){if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,"Kral Ordusu",K.kingArmy);else checkBattleAt(n,K.kingArmy)},180)}
+function moveTo(n){var a=K.info[K.at],b=K.info[n];if(!b)return;var c=movementCost(a,b,K.playerRegion);if(c>=99){say(v65PassageMessage(K.at,n,K.playerRegion));return}if(!spendAction("Kral hareketi"))return;K.at=n;el("pawn").style.left=b.x+"px";el("pawn").style.top=b.y+"px";el("where").textContent=n;K.mode="";clearGlow();say("♔ <b>"+n+"</b> konumuna ulaştın. Krallık eylem puanı: <b>"+actionText()+"</b>");(function(){if(hostileSettlement(n,K.playerRegion))resolveArrivalConquest(n,K.playerRegion,"Kral Ordusu",K.kingArmy);else checkBattleAt(n,K.kingArmy)})()}
 
 var territoryShapes=[
  "polygon(14% 8%,72% 4%,96% 31%,88% 78%,58% 96%,17% 87%,3% 48%)",
@@ -5058,15 +5058,15 @@ function v72Members(region){
  }
  var court=v283Capital(region)||capitals[region];
  var monarch=add(d.king,d.kingAge||38,'Kral',court);
- if(monarch){monarch.role=monarch.alive?'Kral':'Eski Kral';if(d.kingAge!=null)monarch.age=d.kingAge}
+ if(monarch){monarch.role=monarch.alive?'Kral':'Eski Kral';if(monarch.alive&&d.kingAge!=null)monarch.age=d.kingAge}
  if(d.consortName==null&&!d.consortDied&&(!d.reigns||d.reigns===1))d.consortName=region+' Kraliçesi';
  var consort=d.consortName?add(d.consortName,d.consortAge||34,'Eş',court):null;
- if(consort&&d.consortAge!=null)consort.age=d.consortAge;
+ if(consort&&consort.alive&&d.consortAge!=null)consort.age=d.consortAge;
  var heir=add(d.heir,d.heirAge==null?17:d.heirAge,'Resmî Varis',court);
  if(heir&&heir.alive){heir.role='Resmî Varis';if(d.heirAge!=null)heir.age=d.heirAge}
  d.children.forEach(function(child){var p=add(child.name,child.age,'Çocuk',court);
   if(p&&child.claims)p.claims=child.claims.slice();
-  if(p&&p!==heir){p.age=child.age;p.alive=child.alive!==false;if(child.claims)p.claims=child.claims.slice()}
+  if(p&&!p.alive)child.alive=false; if(p&&p!==heir&&p.alive){p.age=child.age;p.alive=child.alive!==false;if(child.claims)p.claims=child.claims.slice()}
  });
  Object.keys(foreignDynastyGovernors).forEach(function(city){
   var f=foreignDynastyGovernors[city];if(f.kingdom!==region||f.defected)return;
@@ -6322,6 +6322,34 @@ function v85Activate(){
  dynasty.forEach(function(p){v85Portrait(p.name,p.role,p)});
 }
 v85Activate();
+
+</script>
+<script>
+/* V86: varış tutarlılığı, ölüm kaydı ve savaş durumunun açık gösterimi. */
+window.KALDARYA_BUILD='V86';document.title='Kaldarya V86 — Savaş ve Hanedan';
+function v86DeathRecord(p,cause,city){if(!p||p.alive)return;if(!p.deathRecord)p.deathRecord={age:p.age,year:K.year,turn:K.turn,cause:cause,city:city||null};p.age=p.deathRecord.age;v72CloseDeadCaptivity(p);p.captured=false;p.captor=null;if(p.role==='Kral')p.role='Eski Kral'}
+var v86Death=v72Death;
+v72Death=function(region,p,city){var alive=p&&p.alive,captured=p&&p.captured,result=v86Death.apply(this,arguments);if(alive&&p&&!p.alive)v86DeathRecord(p,captured?'Esarette ölüm':'Muharebe',city);return result};
+var v86NaturalDeath=v78NaturalDeath;
+v78NaturalDeath=function(region,p){var alive=p&&p.alive,result=v86NaturalDeath.apply(this,arguments);if(alive&&p&&!p.alive)v86DeathRecord(p,'Doğal nedenler');return result};
+var v86PlayerSuccession=v39PlayerSuccession;
+v39PlayerSuccession=function(city){var p=v67KingPerson(),alive=p&&p.alive,result=v86PlayerSuccession.apply(this,arguments);if(alive&&p&&!p.alive)v86DeathRecord(p,city?'Muharebe':'Doğal nedenler',city);return result};
+var v86ForeignSuccession=v28Succession;
+v28Succession=function(region,city){var d=v28State(region).dynasty,p=(d.members||[]).find(function(p){return p.name===d.king}),result=v86ForeignSuccession.apply(this,arguments);if(p&&!p.alive)v86DeathRecord(p,city?'Muharebe':'Doğal nedenler',city);return result};
+var v86KillKing=v66KillKing;
+v66KillKing=function(region,army,city,enemy){var p=v72Character(region,v73Ruler(region)),result=v86KillKing.apply(this,arguments);if(p&&!p.alive)v86DeathRecord(p,'Muharebe',city);return result};
+var v86Traverse=v63CanTraverse;
+v63CanTraverse=function(from,to,region){if(K.info[from]&&K.info[to]&&ownerOf(to)===region&&(FIXED_ROADS[from]||[]).indexOf(to)>=0&&(FIXED_ROADS[to]||[]).indexOf(from)>=0)return true;return v86Traverse.apply(this,arguments)};
+function v86Biography(index){var p=dynasty[index];if(!p)return;var d=p.deathRecord;panel(v85Header(v37Safe(p.name))+'<div class="card">'+portraitHTML(p.name,p.role,p)+'<b>'+v37Safe(p.role)+'</b><br>'+(p.alive?p.age+' yaş':(d?d.age:p.age)+' yaşında öldü')+(d?'<br>Ölüm yılı: '+d.year+' • '+v37Safe(d.cause)+(d.city?' • '+v37Safe(d.city):''):'')+'<p>'+v37Safe(p.bio||'Bu karakter için ek yaşam kaydı bulunmuyor.')+'</p></div>')}
+var v86Family=familyHTML;
+familyHTML=function(){var h=v86Family.apply(this,arguments);return h.replace(/(<div class="person dead">[\s\S]*?<b>)([^<]+)(<\/b>[\s\S]*?<\/div><\/div>)/g,function(all,start,name,end){var i=dynasty.findIndex(function(p){return v37Safe(p.name)===name&&!p.alive});if(i<0)return all;var d=dynasty[i].deathRecord;return start+name+end.replace(/<\/div>$/,(d?'<div class="small">Ölüm yılı: '+d.year+'</div>':'')+'<button onclick="v86Biography('+i+')">Yaşam kaydı</button></div>')})};
+var v86Diplomacy=openDiplomacy;
+openDiplomacy=function(){var result=v86Diplomacy.apply(this,arguments),box=el('panel');if(!box)return result;Array.from(box.querySelectorAll('.card > b')).forEach(function(b){var region=b.textContent.trim();if(!capitals[region]||region===K.playerRegion)return;var status=document.createElement('div');status.className='small';status.dataset.v86War=region;status.textContent=v331Authorized(K.playerRegion,region)?(v331CanAttackNow(K.playerRegion,region)?'⚔ Savaşta • Bu krallığın komşu şehirlerine saldırı açık.':'⚔ Savaş ilan edildi • Saldırı gelecek tur açılacak.'):'🕊 Savaş yok • Geçiş izni fetih hakkı vermez.';b.parentNode.insertBefore(status,b.nextSibling)});return result};
+var v86MoveGeneral=moveGeneralTo;
+moveGeneralTo=function(city){var g=generals[K.activeGeneral],from=g&&g.at,result=v86MoveGeneral.apply(this,arguments);if(g&&g.at===city&&from!==city&&!v42Pending&&ownerOf(city)!==K.playerRegion&&!v331Authorized(K.playerRegion,ownerOf(city)))say('🚶 '+g.name+' '+city+' şehrinden geçiyor. Güncel sahibi: '+ownerOf(city)+'. Bu krallıkla savaş olmadığı için fetih yapılmadı.');return result};
+var v86Assault=v42ResolveAssault;
+v42ResolveAssault=function(){var city=v42Pending&&v42Pending.to,result=v86Assault.apply(this,arguments);if(city&&settlements[city].siege&&settlements[city].siege.attacker===K.playerRegion){el('panel').innerHTML+='<div class="card">🏰 Muharebe kazanıldı; surlar nedeniyle şehir henüz alınmadı. Kuşatma ilerlemesi: '+settlements[city].siege.progress+'/'+settlements[city].siege.required+'. Ordu burada kalmalı.</div>'}return result};
+if(el('choose'))el('choose').dataset.build='V86';var v86Head=document.querySelector('#bar .dockHeading');if(v86Head&&v86Head.firstElementChild)v86Head.firstElementChild.textContent='KRALLIK KONTROLLERİ • V86';
 
 </script>
 </body></html>
