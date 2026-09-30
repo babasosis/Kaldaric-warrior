@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=4,user-scalable=yes,viewport-fit=cover">
-<title>Kaldarya V19 Ordu Takvim Aile Ağacı</title>
+<title>Kaldarya V84 — Savaş ve Hanedan</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;background:#050a12;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
 #bar{height:58px;padding:7px 8px;display:flex;align-items:center;gap:7px;overflow-x:auto;background:#111b2d;position:relative;z-index:100}
@@ -622,7 +622,7 @@ function v28RemoveFromDiplomacy(region){
 }
 function v28DynastyFate(region){
  var r=Math.random();
- return r<.34?"Hanedanın hayatta kalan üyeleri sürgüne kaçtı.":r<.67?"Hanedanın hayatta kalan üyeleri krallığın düşüşünde öldürüldü.":"Hanedanın hayatta kalan üyeleri kimliklerini terk edip halkın arasına karıştı ve iz bırakmadan kayboldu.";
+ return "Hanedan ülke yönetimini kaybetti. Üyelerin ölüm ve esaret durumları hanedan ve hapishane kayıtlarında izlenir.";
 }
 function v28Destroy(region){
  if(V28_DESTROYED[region])return;
@@ -1533,8 +1533,11 @@ function v312Battle(ar,attackers,dr,city){
  var dLoss=Math.min(dN,Math.max(1,Math.round(aN*(win?.50:.25)*(.88+Math.random()*.24))));
  function hit(arr,total){
    var sum=arr.reduce(function(n,u){return n+(u.soldiers||0)},0)||1;
-   arr.forEach(function(u){
-     var loss=Math.max(1,Math.round(total*((u.soldiers||0)/sum)));
+   var shares=arr.map(function(u,i){var exact=total*(u.soldiers||0)/sum;return {i:i,n:Math.floor(exact),fraction:exact-Math.floor(exact)}});
+   var left=total-shares.reduce(function(n,x){return n+x.n},0);
+   shares.slice().sort(function(a,b){return b.fraction-a.fraction||a.i-b.i}).forEach(function(x){if(left>0&&x.n<(arr[x.i].soldiers||0)){x.n++;left--}});
+   arr.forEach(function(u,i){
+     var loss=shares[i].n;
      u.soldiers=Math.max(0,(u.soldiers||0)-loss);
      u.morale=Math.max(0,(u.morale==null?70:u.morale)-(u.soldiers?9:28));
      u.supply=Math.max(0,(u.supply==null?70:u.supply)-7);
@@ -1967,6 +1970,7 @@ function v331CanAttackNow(a,b){
 var v331PreviousSetWar=setWar;
 setWar=function(a,b,on){
  var key=v331Key(a,b),was=v331Authorized(a,b);
+ if(on&&was)return true; /* Tekrarlı ilan saldırı tarihini sıfırlamaz. */
  if(on){
    V331_WAR_AUTH[key]={active:true,declaredTurn:K.turn,declaredYear:K.year,declaredMonth:K.month,attacker:a,defender:b};
    wars[a+"|"+b]=true;wars[b+"|"+a]=true;
@@ -2809,7 +2813,7 @@ function v39PlayerSuccession(battleCity){
  }
  K.pendingPlayerSuccession=null;
  var heir=dynasty.find(function(x){return x.role==="Resmî Varis"&&x.alive});
- if(heir)heir.age=Math.max(heir.age,14+Math.max(0,K.year-1));
+ /* Yaş, yıllık hanedan döngüsünden gelir; takvim yılı varisin yaşı değildir. */
  if(heir){heir.role="Kral";K.kingName="Kral "+heir.name.replace(/^Prens\s+|^Prenses\s+/,"")}
  else{
   var people=(K.peopleLoyal||0),army=(K.armyLoyal||0),support=army>people+9?"ordu":"halk";
@@ -2818,7 +2822,8 @@ function v39PlayerSuccession(battleCity){
   dynasty.push({name:K.kingName,age:35,role:"Kral",traits:["Seçilmiş"],alive:true});
   K.news.unshift("♔ "+support+" "+K.kingName+" adlı yeni hükümdarı seçti.")
  }
- K.regency=heir&&heir.age<18?{guardian:"Kraliçe Lysa",months:12*(18-heir.age)}:null;
+ var guardian=dynasty.find(function(p){return p!==heir&&p.alive&&!p.captured&&p.age>=18});
+ K.regency=heir&&heir.age<18?{guardian:guardian?guardian.name:'Saray Naibi',months:12*(18-heir.age)}:null;
  var cost=Math.min(12,K.gold);
  K.gold-=cost;q.soldiers=cost>=8?6:3;q.supply=65;q.morale=65;
  q.alive=true;q.dead=false;q.captured=false;
@@ -2903,8 +2908,7 @@ endTurn=function(){
  var out=v39OldEndTurn.apply(this,arguments);
  if(K.regency){
   K.regency.months=Math.max(0,K.regency.months-12);
-  var child=dynasty.find(function(x){return x.name==="Prens Edric"});
-  if(child)child.age=Math.max(child.age,18-Math.ceil(K.regency.months/12)-1);
+  /* Hükümdarın yaşı v67Annual içinde yılda bir kez artırılır. */
   if(!K.regency.months){K.regency=null;K.news.unshift("👑 "+K.kingName+" yetişkin oldu; vesayet sona erdi.")}
  }
  if(K.pendingPlayerSuccession){
@@ -3142,7 +3146,7 @@ function v42ResolveAssault(){
  var won=v312Battle(K.playerRegion,[q.army],q.enemy,q.to);
  var succeeded=q.army===K.kingArmy&&kingBefore!==K.kingName;
  var lossP=succeeded?before:Math.max(0,before-q.army.soldiers),enemyAfter=v312Defenders(q.enemy,q.to).reduce(function(n,u){return n+u.soldiers},0);
- if(won&&q.army.soldiers>0){
+ if(won&&!succeeded&&q.army.soldiers>0){
   if(q.army===K.kingArmy){K.at=q.to;el('pawn').style.left=K.info[q.to].x+'px';el('pawn').style.top=K.info[q.to].y+'px';el('where').textContent=q.to}
   else{q.army.at=q.to;v28MoveVisual(q.army)}
  }else if(!succeeded&&q.army.soldiers>0&&ownerOf(q.from)!==K.playerRegion){
@@ -3155,7 +3159,7 @@ function v42ResolveAssault(){
   }
  }
  recordBattle(q.enemy,won,q.to,lossP,Math.max(0,enemyBefore-enemyAfter));
- panel('<div class="row"><h2 style="flex:1">'+(won?'🏆 ZAFER':'⚔ YENİLGİ')+'</h2><button onclick="closePanel()">✕</button></div><div class="card">'+q.to+' • '+(won?'Savunma aşıldı.':'Savunma sürdü; fetih gerçekleşmedi.')+'<br>Kayıplar: '+lossP+' / '+Math.max(0,enemyBefore-enemyAfter)+(succeeded?' • Önceki kralın ordusu dağıldı; yeni hükümdarın ordusu ayrı kuruldu.':q.army.soldiers<=0?' • Ordu dağıldı.':'')+'</div>');
+ panel('<div class="row"><h2 style="flex:1">'+(won?'🏆 ZAFER':'⚔ YENİLGİ')+'</h2><button onclick="closePanel()">✕</button></div><div class="card">'+q.to+' • '+(won?'Savunma aşıldı.':'Savunma sürdü; fetih gerçekleşmedi.')+'<br>Kayıplar: '+lossP+' / '+Math.max(0,enemyBefore-enemyAfter)+(q.army.soldiers<=0?' • Ordu dağıldı.':'')+'</div>');
  sync()
 }
 var v42OldMoveTo=moveTo;
@@ -3816,12 +3820,27 @@ function v49Occupations(){
 /* Her ordu bir turda yalnızca bir düşman şehrine saldırabilir. */
 var v49OldAIMove=v28MoveUnit;
 v28MoveUnit=function(region,unit){
- var target=unit&&v28ChooseMove(region,unit),enemy=target&&ownerOf(target);
- if(enemy&&enemy!==region&&v331Authorized(region,enemy)&&unit.lastAssaultTurn===K.turn)return false;
- var before=v28State(region).ap,result=v49OldAIMove.apply(this,arguments);
- if(enemy&&enemy!==region&&v331Authorized(region,enemy)&&v28State(region).ap<before)
-  unit.lastAssaultTurn=K.turn;
- return result;
+ var state=v28State(region);if(!v312Active(unit)||state.ap<=0)return false;
+ var from=v312CityOf(unit,region),siege=settlements[from]&&settlements[from].siege;
+ if(siege&&siege.attacker===region&&ownerOf(from)!==region){state.ap--;return true}
+ var target=v28ChooseMove(region,unit),enemy=target&&ownerOf(target);
+ if(!target||target===from||!v63CanTraverse(from,target,region))return false;
+ if(enemy&&enemy!==region&&v331Authorized(region,enemy)){
+  if(!v331CanAttackNow(region,enemy)||unit.lastAssaultTurn===K.turn)return false;
+  var group=v312Defenders(region,from).filter(function(u){return u.lastAssaultTurn!==K.turn});
+  if(group.indexOf(unit)<0)return false;
+  group.forEach(function(u){u.lastAssaultTurn=K.turn});state.ap--;
+  var defenders=v312Defenders(enemy,target),won;
+  if(defenders.length)won=v312Battle(region,group,enemy,target);
+  else won=wallLevel(target)>0||setOwner(target,region,v31Name(unit,region),'BATTLE_WON');
+  if(won){
+   group.forEach(function(u){if(v312Active(u)&&u._v66DiedTurn!==K.turn&&v312CityOf(u,region)===from){u.at=target;u.supply=Math.max(0,(u.supply==null?70:u.supply)-3);v28MoveVisual(u)}});
+   if(ownerOf(target)===enemy&&wallLevel(target)>0&&!v312Defenders(enemy,target).length&&armyAtFor(region,target))beginOccupation(target,region,v31Name(unit,region));
+  }
+  /* Yenilen veya yeni hükümdara geçen birliklerin konumu eski başlangıca geri yazılmaz. */
+  return true;
+ }
+ unit.at=target;unit.supply=Math.max(0,(unit.supply==null?70:unit.supply)-2);state.ap--;v28MoveVisual(unit);return true;
 };
 var v49OldMoveTo=moveTo;
 moveTo=function(city){
@@ -4103,6 +4122,11 @@ function v53DefeatPanel(){
 }
 function v53FinalizeDefeat(){
  if(!K.gameOver)return;
+ if(!V28_DESTROYED[K.playerRegion]){
+  K.kingArmy.soldiers=0;K.kingArmy.alive=false;el('pawn').style.display='none';
+  generals.forEach(function(g){g.soldiers=0;g.onDuty=false;if(g.el)g.el.style.display='none'});
+  v28Destroy(K.playerRegion);
+ }
  if(!K.defeatFinalized){
   K.defeatFinalized=true;
   v51Add('defeat','Krallık yıkıldı','Son şehir geri alınamadı; oyun sona erdi.',K.playerRegion);
@@ -4466,6 +4490,23 @@ function v64GeographicCorridor(a,b){
 v64GeographicCorridor('Selania','Kuzey Kırları');
 /* Nifel ile Kızılkum arasındaki dağ sırtı yalnız belirlenmiş geçitten aşılır. */
 v64GeographicCorridor('Nifel','Kızılkum');
+/* V84 — Batı adaları ile ana kara arasındaki eksik deniz sefer hattı. */
+var V84_SEA_ROUTES=[['Sandağ','Bahar Limanı']];
+V84_SEA_ROUTES.forEach(function(pair){v59Connect(pair[0],pair[1])});
+function v84DrawSeaRoutes(){
+ var stage=el('stage');if(!stage||el('v84SeaRoutes'))return;
+ var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ svg.id='v84SeaRoutes';svg.setAttribute('viewBox','0 0 1536 1024');
+ svg.style.cssText='position:absolute;left:0;top:0;width:1536px;height:1024px;z-index:17;pointer-events:none';
+ V84_SEA_ROUTES.forEach(function(pair){
+  var a=K.info[pair[0]],b=K.info[pair[1]],line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);
+  line.setAttribute('stroke','#a4edff');line.setAttribute('stroke-width','3');line.setAttribute('stroke-dasharray','7 6');svg.appendChild(line);
+  var label=document.createElementNS('http://www.w3.org/2000/svg','text');label.setAttribute('x',(a.x+b.x)/2);label.setAttribute('y',(a.y+b.y)/2-8);
+  label.setAttribute('text-anchor','middle');label.setAttribute('fill','#fff');label.setAttribute('font-size','14');label.setAttribute('paint-order','stroke');label.setAttribute('stroke','#17334a');label.setAttribute('stroke-width','3');label.textContent='Deniz yolu';svg.appendChild(label);
+ });stage.appendChild(svg);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',v84DrawSeaRoutes,false);else v84DrawSeaRoutes();
 </script>
 <script>
 /* V65 — Kapalı sınır, savaş bekleme süresi ve gerçek yol eksikliği ayrı anlatılır. */
@@ -4821,7 +4862,7 @@ function v71DynastyAtWar(region){
 }
 function v67PlayerChance(){
  var king=v67KingPerson(),partner=K.consortKing===K.kingName?dynasty.find(function(p){return p.alive&&p.role==='Eş'}):null;
- return king&&partner&&!partner.captured&&!K.gameOver?v67Chance(king.age,partner.age,dynasty.filter(function(p){return p.alive&&(p.role==='Çocuk'||p.role==='Resmî Varis')&&p.parentKing===K.kingName}).length,(K.peopleHappy+K.armyLoyal)/2,K.food,v71DynastyAtWar(K.playerRegion)||K.warFatigue>25):0;
+ return king&&king.alive&&!king.captured&&!K.pendingPlayerSuccession&&partner&&!partner.captured&&!K.gameOver?v67Chance(king.age,partner.age,dynasty.filter(function(p){return p.alive&&(p.role==='Çocuk'||p.role==='Resmî Varis')&&p.parentKing===K.kingName}).length,(K.peopleHappy+K.armyLoyal)/2,K.food,v71DynastyAtWar(K.playerRegion)||K.warFatigue>25):0;
 }
 function v67AgePlayer(){
  dynasty.forEach(function(p){if(p.alive)p.age++});
@@ -4863,7 +4904,8 @@ function v67AgeKingdom(region){
  }
  var court=typeof v72Members==='function'?v72Members(region):[];
  var spouse=d.consortName?court.find(function(p){return p.name===d.consortName&&p.alive&&!p.captured}):null;
- var chance=spouse?v67Chance(d.kingAge,d.consortAge,d.children.filter(function(p){return p.alive&&p.parentKing===d.king}).length,(state.people+state.armyLoyal)/2,state.food==null?100:state.food,v71DynastyAtWar(region)):0;
+ var livingKing=v72Character(region,d.king);
+ var chance=spouse&&v28KingAlive(region)&&livingKing&&livingKing.alive&&!livingKing.captured?v67Chance(d.kingAge,d.consortAge,d.children.filter(function(p){return p.alive&&p.parentKing===d.king}).length,(state.people+state.armyLoyal)/2,state.food==null?100:state.food,v71DynastyAtWar(region)):0;
  if(spouse&&typeof v73BirthModifier==='function')chance=v73BirthModifier(region,spouse,chance);
  d.birthChance=chance;
  if(chance&&Math.random()*100<chance){
@@ -4879,7 +4921,7 @@ function v67AgeKingdom(region){
   army.soldiers=0;army.alive=false;
   K.news.unshift('☠ '+region+' kralı '+old+' '+age+' yaşında öldü.');
   v28Succession(region,null);
-  if(d.king!==old){d.kingAge=d.heirAge==null?35:d.heirAge;d._ageKingName=d.king}
+  /* v28Succession yeni hükümdarın gerçek yaşını zaten kaydeder. */
  }
 }
 function v67Annual(){
@@ -4892,6 +4934,9 @@ function v67Important(message){return /(?:kral[^.]*öld|öldü|isyan|bağımsız
 function v67ShowEvents(){
  var fresh=K.news.filter(function(s){return !V67_SEEN.has(s)});
  K.news.forEach(function(s){V67_SEEN.add(s)});
+ /* Uzun oyunlarda her tur bütün yılların haberlerini yeniden tarama. */
+ if(K.news.length>600)K.news.length=600;
+ V67_SEEN=new Set(K.news);
  var important=fresh.filter(v67Important).slice(0,12);
  if(!important.length)return;
  important.forEach(function(s){V67_IMPORTANT.unshift({year:K.year,text:s})});
@@ -4997,7 +5042,7 @@ function v72Members(region){
  }
  var court=v283Capital(region)||capitals[region];
  var monarch=add(d.king,d.kingAge||38,'Kral',court);
- if(monarch){monarch.role='Kral';if(d.kingAge!=null)monarch.age=d.kingAge}
+ if(monarch){monarch.role=monarch.alive?'Kral':'Eski Kral';if(d.kingAge!=null)monarch.age=d.kingAge}
  if(d.consortName==null&&!d.consortDied&&(!d.reigns||d.reigns===1))d.consortName=region+' Kraliçesi';
  var consort=d.consortName?add(d.consortName,d.consortAge||34,'Eş',court):null;
  if(consort&&d.consortAge!=null)consort.age=d.consortAge;
@@ -5040,6 +5085,11 @@ function v72Character(region,name){return v72Members(region).find(function(p){re
 function v72Capture(region,person,captor,city){
  if(!person||!person.alive||person.captured)return false;
  person.captured=true;person.captor=captor;person.at=city;
+ if(region===K.playerRegion){
+  K.dynastyPetitions.forEach(function(e){if(e.name===person.name)e.done=true});
+  K.successionDisputes.forEach(function(e){if(e.rival===person.name)e.done=true});
+ }
+ var gov=settlements[city];if(gov&&gov.governor===person.name)gov.governor='Atanmamış';
  if(person.assignment){person.assignment.dynastyCommander=null;person.assignment=null}
  if(captor===K.playerRegion){
   var existing=K.prisoners.find(function(p){return p.alive&&p.kingdom===region&&p.name===person.name});
@@ -5050,9 +5100,24 @@ function v72Capture(region,person,captor,city){
  K.news.unshift('⛓ '+region+' hanedanından '+person.name+' '+city+' yakınında '+captor+' tarafından esir alındı.');
  return true;
 }
+function v72CloseDeadCaptivity(person){
+ if(!person||person.alive)return;
+ person.captured=false;person.captor=null;
+ K.prisoners.forEach(function(c){if(c.dynastyRef===person)c.alive=false});
+ K.familyCaptives.forEach(function(c){if(c.person===person)c.alive=false});
+ Object.keys(foreignDynastyGovernors).forEach(function(city){var f=foreignDynastyGovernors[city];if(f.name===person.name){f.dead=true;f.captured=false}});
+}
 function v72Death(region,person,city){
  if(!person||!person.alive)return false;
- person.alive=false;person.captured=false;
+ person.alive=false;person.captured=false;person.captor=null;
+ K.prisoners.forEach(function(c){if(c.dynastyRef===person)c.alive=false});
+ K.familyCaptives.forEach(function(c){if(c.person===person)c.alive=false});
+ if(region===K.playerRegion){
+  K.dynastyPetitions.forEach(function(e){if(e.name===person.name)e.done=true});
+  K.successionDisputes.forEach(function(e){if(e.rival===person.name)e.done=true});
+  K.birthDecisions.forEach(function(e){if(e.name===person.name)e.done=true});
+ }
+ Object.keys(foreignDynastyGovernors).forEach(function(city){var f=foreignDynastyGovernors[city];if(f.kingdom===region&&f.name===person.name){f.dead=true;f.captured=false}});
  if(region!==K.playerRegion){var d=v28State(region).dynasty,child=(d.children||[]).find(function(x){return x.name===person.name});if(child)child.alive=false}
  if(person.assignment){person.assignment.dynastyCommander=null;person.assignment=null}
  var governor=settlements[city];if(governor&&governor.governor===person.name)governor.governor='Atanmamış';
@@ -5090,11 +5155,12 @@ setOwner=function(city,newOwner,by,force){
  if(changed&&newOwner===K.playerRegion){
   K.prisoners.filter(function(p){return p.alive&&p.kingdom===old&&p.capturedAt===city&&p.type==='Hanedan'&&!p.dynastyRef}).forEach(function(prisoner){
    var person=v72Character(old,prisoner.name);if(!person)return;
+   if(!person.alive||person.role==='Kral'||person.at!==city){prisoner.alive=false;return}
    person.captured=true;person.captor=newOwner;prisoner.dynastyRef=person;v72Heir(old);
   });
  }
  if(changed&&force!=='STATE_EVENT')residents.forEach(function(person){
-  if(person.captured||!person.alive)return;
+  if(person.captured||!person.alive||person.role==='Kral'||person.at!==city||person.assignment)return;
   var safe=v283Owned(old).find(function(c){return c.name!==city});
   if(!safe||Math.random()<.22)v72Capture(old,person,newOwner,city);
   else if(safe){person.at=safe.name;K.news.unshift('🏃 '+person.name+' '+city+' şehrinden '+safe.name+' konumuna kaçtı.')}
@@ -5164,9 +5230,9 @@ familyHTML=function(){
  v72Members(K.playerRegion);
  var ruler=dynasty.find(function(p){return p.alive&&p.role==='Kral'}),spouse=dynasty.find(function(p){return p.alive&&p.role==='Eş'&&p.marriedTo===K.kingName})||dynasty.find(function(p){return p.alive&&p.role==='Eş'});
  function tile(p){return '<div class="person'+(p.alive?'':' dead')+'">'+portraitHTML(p.name,p.role)+'<b>'+v37Safe(p.name)+'</b><div class="small">'+p.age+' yaş • '+v37Safe(p.role)+(p.captured?' • ⛓ Esir':p.alive?'':' • † Öldü')+'</div></div>'}
- var ancestors=dynasty.filter(function(p){return !p.alive&&p.role==='Eski Kral'}).slice(-3),children=dynasty.filter(function(p){return p.role==='Resmî Varis'||p.role==='Çocuk'});
+ var ancestors=dynasty.filter(function(p){return !p.alive}),children=dynasty.filter(function(p){return p.alive&&(p.role==='Resmî Varis'||p.role==='Çocuk')});
  var h='<div class="familyShell"><div class="familyHead"><div style="font-size:22px">♛ AİLE AĞACI</div><div class="small">Yaşam, savaş ve veraset aynı hanedanda izlenir.</div></div><div class="tree">'+
-  (ancestors.length?'<div class="generation">ÖNCEKİ HÜKÜMDARLAR</div><div class="children">'+ancestors.map(tile).join('')+'</div><div class="line"></div>':'')+
+  (ancestors.length?'<div class="generation">ANILAN HANEDAN ÜYELERİ</div><div class="children">'+ancestors.map(tile).join('')+'</div><div class="line"></div>':'')+
   '<div class="generation">HÜKÜMDAR KUŞAĞI</div><div class="couple">'+(ruler?tile(ruler):'Taht boş')+(spouse?'<div class="marriage">💍</div>'+tile(spouse):'')+'</div><div class="line"></div>'+
   '<div class="generation">HANEDAN ÜYELERİ VE VARİSLER</div><div class="children">'+(children.length?children.map(tile).join(''):'Henüz varis yok')+'</div></div></div>';
  var list=dynasty.filter(function(p){return p.alive}).map(function(p){
@@ -5214,12 +5280,17 @@ executePrisoner=function(i){var p=K.prisoners[i],was=p&&p.alive,out=v72OldExecut
 var v72OldSuccession=v28Succession;
 v28Succession=function(region,city){
  var state=v28State(region),d=state.dynasty,old=d.king;
+ var army=kingdomKings[region],deadMonarch=v72Character(region,old);
+ if(deadMonarch&&army&&(army.alive===false||army.dead||army.soldiers<=0)){
+  deadMonarch.alive=false;deadMonarch.role='Eski Kral';v72CloseDeadCaptivity(deadMonarch);
+  (d.children||[]).forEach(function(c){if(c.name===old)c.alive=false});
+ }
  v72Heir(region);
  var out=v72OldSuccession.apply(this,arguments);
  if(d.king!==old&&(!d.reigns||d.reigns<2))d.reigns=2;
  var oldPerson=v72Character(region,old);
  if(oldPerson&&d.king!==old){
-  oldPerson.alive=false;oldPerson.role='Eski Kral';oldPerson.assignment=null;
+  oldPerson.alive=false;oldPerson.role='Eski Kral';oldPerson.assignment=null;v72CloseDeadCaptivity(oldPerson);
   var oldChild=(d.children||[]).find(function(p){return p.name===old});if(oldChild)oldChild.alive=false;
  }
  if(d.king!==old){var former=d.members&&d.members.find(function(p){return p.name===d.consortName});if(former)former.role='Kraliçe Ana';d.consortName=null}
@@ -5425,6 +5496,7 @@ function v73Faction(region,p,force){
  K.familyCaptives.forEach(function(c){if(c.person===p)c.alive=false});
  var index=source.indexOf(p);if(index>=0)source.splice(index,1);
  v73Memory(p,region+' tahtına karşı ayaklandı.');
+ Object.keys(settlements).forEach(function(city){var s=settlements[city];if(ownerOf(city)===region&&s.governor===p.name)s.governor='Atanmamış'});
  Object.keys(foreignDynastyGovernors).forEach(function(city){var f=foreignDynastyGovernors[city];if(f.kingdom===region&&f.name===p.name)f.defected=true});
  if(region!==K.playerRegion){var d=v28State(region).dynasty;d.children=(d.children||[]).filter(function(c){return c.name!==p.name});if(d.heir===p.name){d.heir=null;d.heirAlive=false;v72Heir(region)}}
  else v72Heir(region);
@@ -5484,7 +5556,7 @@ function v73Annual(){
  });
  K.dynastyPetitions.forEach(function(e){
   if(e.done||K.turn-e.turn<2)return;
-  e.done=true;var p=dynasty.find(function(x){return x.name===e.name&&x.alive});if(!p)return;
+  e.done=true;var p=dynasty.find(function(x){return x.name===e.name&&x.alive&&!x.captured});if(!p)return;
   p.stress=v73Bound(p.stress+18,0,100);v73Adjust(K.playerRegion,p,K.kingName,-15);
   K.news.unshift('⚠ '+p.name+' yanıt alamadığı için kraldan uzaklaştı.');v73Faction(K.playerRegion,p);
  });
@@ -5728,7 +5800,7 @@ function v76Stance(region,unit){
  var p=v72Character(region,unit.dynastyCommander);if(!p||!p.alive||p.captured)return 'dengeli';
  if(unit.dynastyOrder&&unit.dynastyOrder.person===p.name)return unit.dynastyOrder.stance;
  var x=v73Profile(region,p);
- if((unit.supply||100)<35||x.courage<38&&x.tactics>=50)return 'temkinli';
+ if((unit.supply==null?100:unit.supply)<35||x.courage<38&&x.tactics>=50)return 'temkinli';
  if(x.courage>=72&&x.ambition>=58&&p.stress<70)return 'atak';
  return 'dengeli';
 }
@@ -5830,7 +5902,7 @@ v67Annual=function(){
 /* V78 — Yaşlanan hanedan üyeleri doğal nedenlerle ölebilir; ölüler verasete geri dönmez. */
 function v78NaturalDeath(region,person){
  if(!person||!person.alive)return;
- person.alive=false;person.bio=person.name+' '+person.age+' yaşında doğal nedenlerle öldü.';
+ person.alive=false;v72CloseDeadCaptivity(person);person.bio=person.name+' '+person.age+' yaşında doğal nedenlerle öldü.';
  if(person.assignment){person.assignment.dynastyCommander=null;person.assignment=null}
  Object.keys(settlements).forEach(function(city){
   if(settlements[city]&&settlements[city].governor===person.name)settlements[city].governor='Atanmamış';
@@ -5930,7 +6002,7 @@ if(K.kingName==='Kral Arven')dynasty.forEach(function(person){
 
 function v81Relation(a,b){return v30D(a,b).relation}
 function v81TravelPermit(a,b){
- return !!(a&&b&&(a===b||!atWar(a,b)&&(v30Has(a,b,'access')||v81Relation(a,b)>50)));
+ return !!(a&&b&&(a===b||!atWar(a,b)&&(v30Has(a,b,'access')||v81Relation(a,b)>=50)));
 }
 hasMilitaryAccess=function(a,b){return v81TravelPermit(a,b)};
 borderPermission=function(a,b){return a===b||v331Authorized(a,b)||v81TravelPermit(a,b)};
@@ -5961,7 +6033,7 @@ v65PassageMessage=function(from,to,region){
  var o=ownerOf(to);
  if(v331Authorized(region,o)&&!v331CanAttackNow(region,o))return '⌛ Saldırı gelecek tur açılacak.';
  if(!v81TravelPermit(region,o)&&!v331Authorized(region,o))
-  return '⛔ '+o+' toprağına geçmek için askerî geçiş veya +50 üzeri ilişki gerekiyor.';
+  return '⛔ '+o+' toprağına geçmek için askerî geçiş veya +50 veya üzeri ilişki gerekiyor.';
  return '⛔ Mevcut konumdan bu hedefe geçilemiyor.';
 };
 /* Evlilik yalnızca ilişkiyi değiştirir; anlaşma veya savaş izni oluşturmaz. */
@@ -5999,7 +6071,7 @@ prisonHTML=function(){
 v66LayoutArmies=function(){
  var groups={},unitLabel=new Map();function add(position,unit,node){
   if(!position||!K.info[position]||!node||!unit||unit.soldiers<=0||unit.dead||unit.captured||unit.alive===false)return;
-  unitLabel.set(node,unit===K.kingArmy?K.kingName+' • Kral Ordusu':unit.name||unit.army||'Ordu');
+  unitLabel.set(node,unit.name||unit.army||'Ordu');
   (groups[position]||(groups[position]=[])).push(node);
  }
  K.kingArmy.at=K.at;add(K.at,K.kingArmy,el('pawn'));
@@ -6014,7 +6086,6 @@ v66LayoutArmies=function(){
    node.style.left=(p.x+Math.round(Math.cos(angle)*radius))+'px';
    node.style.top=(p.y+Math.round(Math.sin(angle)*radius))+'px';node.style.display='block';
    node.title=(unitLabel.get(node)||node.textContent||'Ordu')+' • Konum: '+position;
-   if(node===el('pawn'))node.setAttribute('aria-label',K.kingName+' ve Kral Ordusu');
   });
  });
 };
@@ -6169,56 +6240,5 @@ v42Attack=function(from,to,army){
  }
  return handled;
 };
-</script>
-<script>
-/* V84 — İlk tur general düğmeleri, savaş diplomasisi ve olay duyuruları. */
-var v84CreateAIGeneralPawn=v28CreateAIGeneralPawn;
-v28CreateAIGeneralPawn=function(region,unit){
- var result=v84CreateAIGeneralPawn.apply(this,arguments);
- if(unit&&unit.el)unit.el.onclick=function(e){e.stopPropagation();v66EnemyGeneralPanel(region,unit)};
- return result;
-};
-var v84InitAIArmies=v28InitAIArmies;
-v28InitAIArmies=function(){
- var result=v84InitAIArmies.apply(this,arguments);
- v66WireEnemyGenerals();v66LayoutArmies();return result;
-};
-var v84TreatyButtons=v30TreatyButtons;
-v30TreatyButtons=function(other){
- if(atWar(K.playerRegion,other))return '<span class="small">⚔ Savaş sürüyor; anlaşmalar ancak barıştan sonra teklif edilebilir.</span>';
- return v84TreatyButtons(other);
-};
-var v84Important=v67Important;
-v67Important=function(message){
- return v84Important(message)||/savaş ilanı yürürlüğe girdi|barış yaptı|barışı kabul etti|barış teklifini kabul etti/i.test(message);
-};
-function v84EndButton(){
- var button=el('end');if(!button)return;
- button.disabled=!!K.gameOver;
- button.textContent=K.gameOver?'Oyun Bitti':'Turu Bitir';
-}
-var v84Sync=sync;
-sync=function(){var result=v84Sync.apply(this,arguments);v84EndButton();return result};
-var v84EndTurn=endTurn;
-endTurn=function(){
- var before=K.turn,result=v84EndTurn.apply(this,arguments);
- if(K.turn!==before){
-  var previousFirst=V67_IMPORTANT[0];
-  v67ShowEvents();
-  if(V67_IMPORTANT[0]!==previousFirst){
-   var current=V67_IMPORTANT.filter(function(e){return e.year===K.year}).slice(0,12);
-   panel('<div class="row"><h2 style="flex:1">📜 Yıl '+K.year+' • Önemli Olaylar</h2><button onclick="closePanel()" aria-label="Kapat">✕</button></div>'+
-    current.map(function(e){return '<div class="card">'+v37Safe(e.text)+'</div>'}).join('')+
-    '<div class="small">Hanedan kararlarına 📜 Olaylar bölümünden ulaşabilirsiniz.</div>');
-  }else{
-   var box=el('panel'),heading=box&&box.querySelector('h2');
-   var old=heading&&/Yıl (\d+) • Önemli Olaylar/.exec(heading.textContent);
-   if(old&&Number(old[1])!==K.year)closePanel();
-  }
- }
- v84EndButton();
- return result;
-};
-v84EndButton();
 </script>
 </body></html>
