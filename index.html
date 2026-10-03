@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=4,user-scalable=yes,viewport-fit=cover">
-<title>Kaldarya V86 — Savaş ve Hanedan</title>
+<title>Kaldarya V94 — Derin Test ve Mantık Düzeltmeleri</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;background:#050a12;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
 #bar{height:58px;padding:7px 8px;display:flex;align-items:center;gap:7px;overflow-x:auto;background:#111b2d;position:relative;z-index:100}
@@ -182,7 +182,7 @@ font-size:17px;box-shadow:0 0 10px #000;transition:left .45s,top .45s}
 
 <script>
 
-var DATA=[{"name":"Thalor","region":"Aerion","x":180,"y":135,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Kuzeyliman","region":"Aerion","x":170,"y":180,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Sarnitaş","region":"Aerion","x":258,"y":179,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Köyice","region":"Aerion","x":130,"y":226,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Serath","region":"Aerion","x":292,"y":219,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Eldrige","region":"Aerion","x":111,"y":278,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Rüzgarkaya","region":"Aerion","x":314,"y":278,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Taşlıntaş","region":"Aerion","x":139,"y":316,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Selania","region":"Aerion","x":203,"y":314,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Vaelion","region":"Aerion","x":279,"y":313,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Kuzey Kırları","region":"Valdor","x":218,"y":489,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Altınvadi","region":"Valdor","x":141,"y":537,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Ritap","region":"Valdor","x":284,"y":535,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Rüzgâr Vadisi","region":"Valdor","x":139,"y":603,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Zümrüt Ova","region":"Valdor","x":300,"y":603,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Gölebimar","region":"Valdor","x":207,"y":647,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Sandağ","region":"Valdor","x":278,"y":666,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Yeşiltepe","region":"Eldoria","x":514,"y":145,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Gümüşpınar","region":"Eldoria","x":626,"y":165,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Serindere","region":"Eldoria","x":574,"y":192,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Aytas","region":"Eldoria","x":498,"y":216,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Çamlıtepe","region":"Eldoria","x":639,"y":224,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Rüzgartepe","region":"Eldoria","x":482,"y":268,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Kıllıboz","region":"Eldoria","x":720,"y":240,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Zümrütgeçit","region":"Eldoria","x":704,"y":278,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Eldermere","region":"Eldoria","x":517,"y":322,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Akasya","region":"Eldoria","x":567,"y":347,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Mistral","region":"Eldoria","x":678,"y":312,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Yaprak Ormanı","region":"Eldoria","x":675,"y":348,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Karhisar","region":"Thalgrim","x":647,"y":101,"type":"Yerleşim","terrain":"dağ","protector":"Bağımsız"},{"name":"Gökbeçit","region":"Thalgrim","x":706,"y":126,"type":"Yerleşim","terrain":"dağ","protector":"Bağımsız"},{"name":"Ayarkaet","region":"Thalgrim","x":911,"y":112,"type":"Yerleşim","terrain":"dağ","protector":"Bağımsız"},{"name":"Kışvadi","region":"Thalgrim","x":1007,"y":106,"type":"Yerleşim","terrain":"dağ","protector":"Bağımsız"},{"name":"Bozkurtüstü","region":"Vardun","x":938,"y":184,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Demirkapı","region":"Vardun","x":850,"y":211,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Rüzgârkent","region":"Vardun","x":1026,"y":202,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Sarıtepe","region":"Vardun","x":837,"y":273,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Gölgeçit","region":"Vardun","x":806,"y":306,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Kervanyolu","region":"Vardun","x":847,"y":338,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Taşova","region":"Vardun","x":931,"y":352,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Yıldıztepe","region":"Vardun","x":1005,"y":331,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Kumtepe","region":"Vardun","x":1047,"y":362,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Ejder Zirvesi","region":"Drakmir","x":1257,"y":144,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Karagar","region":"Drakmir","x":1348,"y":153,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Kanaltepe","region":"Drakmir","x":1124,"y":212,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Volkan Dağı","region":"Drakmir","x":1238,"y":205,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Lavkale","region":"Drakmir","x":1377,"y":204,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Karatepe","region":"Drakmir","x":1122,"y":257,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Zindan Geçidi","region":"Drakmir","x":1308,"y":252,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Alevkale","region":"Drakmir","x":1420,"y":257,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Taşhisar","region":"Drakmir","x":1149,"y":306,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Morçukur","region":"Drakmir","x":1340,"y":322,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Obsidyen","region":"Drakmir","x":1410,"y":305,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Kızıl Vadi","region":"Drakmir","x":1163,"y":347,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Kanal Kalesi","region":"Drakmir","x":1239,"y":360,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Zindankaya","region":"Drakmir","x":1338,"y":363,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Cehennem Boğazı","region":"Drakmir","x":1414,"y":343,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Yinla","region":"Kaldarya Batı","x":520,"y":438,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Tirel","region":"Kaldarya Batı","x":612,"y":427,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Onyar","region":"Kaldarya Batı","x":689,"y":439,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Oyraz","region":"Kaldarya Batı","x":530,"y":473,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Belvar","region":"Kaldarya Batı","x":501,"y":514,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Nifel","region":"Kaldarya Batı","x":523,"y":564,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Solar","region":"Kaldarya Batı","x":601,"y":566,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Gökpınar","region":"Kaldarya Batı","x":685,"y":553,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Akpınar","region":"Kaldarya Merkez","x":779,"y":414,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Sancaktepe","region":"Kaldarya Merkez","x":789,"y":466,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Börü Geçit","region":"Kaldarya Merkez","x":954,"y":429,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Yaşlıhisar","region":"Kaldarya Merkez","x":967,"y":469,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Taç Ovası","region":"Kaldarya Merkez","x":786,"y":533,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Kümüreçit","region":"Kaldarya Merkez","x":972,"y":537,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Gümüşkaya","region":"Kaldarya Merkez","x":791,"y":584,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Eski Kaldarya","region":"Kaldarya Merkez","x":882,"y":590,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Keleştepe","region":"Kaldarya Merkez","x":979,"y":596,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Konukgeçit","region":"Kaldarya Doğu","x":1107,"y":426,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Karageçit","region":"Kaldarya Doğu","x":1200,"y":423,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Kızılkaya","region":"Kaldarya Doğu","x":1072,"y":470,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Güneçtepe","region":"Kaldarya Doğu","x":1268,"y":469,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Kızıltepe","region":"Kaldarya Doğu","x":1080,"y":533,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Tarmtepe","region":"Kaldarya Doğu","x":1279,"y":536,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Erenicce","region":"Kaldarya Doğu","x":1186,"y":552,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Benlabağ","region":"Kaldarya Doğu","x":1086,"y":586,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Kızılkum","region":"Zafran","x":524,"y":653,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Karahisar","region":"Zafran","x":670,"y":652,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Sıcakova","region":"Zafran","x":490,"y":709,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Miraç","region":"Zafran","x":728,"y":712,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Bahar Limanı","region":"Zafran","x":477,"y":748,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Altın Vaha","region":"Zafran","x":573,"y":731,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Serap Kenti","region":"Zafran","x":674,"y":733,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Rakkiss","region":"Zafran","x":766,"y":747,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Tuzdağı","region":"Zafran","x":514,"y":788,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Çöl Tapınağı","region":"Zafran","x":606,"y":780,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Tusdağ","region":"Zafran","x":705,"y":786,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Aylan","region":"Lunaris","x":1251,"y":621,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Gümüşkale","region":"Lunaris","x":1330,"y":635,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Ruhtepe","region":"Lunaris","x":1185,"y":660,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Yıldızova","region":"Lunaris","x":1324,"y":668,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Kınaskale","region":"Lunaris","x":1120,"y":694,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Gölgeçit Geçit","region":"Lunaris","x":1412,"y":679,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Işıkburnu","region":"Lunaris","x":1145,"y":747,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Elfatun Orman","region":"Lunaris","x":1290,"y":758,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Morova","region":"Lunaris","x":1400,"y":756,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Sessiz Vadi","region":"Lunaris","x":1206,"y":791,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"}];
+var DATA=[{"name":"Thalor","region":"Aerion","x":180,"y":135,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Kuzeyliman","region":"Aerion","x":170,"y":180,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Sarnitaş","region":"Aerion","x":258,"y":179,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Köyice","region":"Aerion","x":130,"y":226,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Serath","region":"Aerion","x":292,"y":219,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Eldrige","region":"Aerion","x":111,"y":278,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Rüzgarkaya","region":"Aerion","x":314,"y":278,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Taşlıntaş","region":"Aerion","x":139,"y":316,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Selania","region":"Aerion","x":203,"y":314,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Vaelion","region":"Aerion","x":279,"y":313,"type":"Yerleşim","terrain":"ada/orman","protector":"Bağımsız"},{"name":"Kuzey Kırları","region":"Valdor","x":218,"y":489,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Altınvadi","region":"Valdor","x":141,"y":537,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Ritap","region":"Valdor","x":284,"y":535,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Rüzgâr Vadisi","region":"Valdor","x":139,"y":603,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Zümrüt Ova","region":"Valdor","x":300,"y":603,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Gölebimar","region":"Valdor","x":207,"y":647,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Sandağ","region":"Valdor","x":278,"y":666,"type":"Yerleşim","terrain":"ova","protector":"Bağımsız"},{"name":"Yeşiltepe","region":"Eldoria","x":514,"y":145,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Gümüşpınar","region":"Eldoria","x":626,"y":165,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Serindere","region":"Eldoria","x":574,"y":192,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Aytas","region":"Eldoria","x":498,"y":216,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Çamlıtepe","region":"Eldoria","x":639,"y":224,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Rüzgartepe","region":"Eldoria","x":482,"y":268,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Kıllıboz","region":"Eldoria","x":720,"y":240,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Zümrütgeçit","region":"Eldoria","x":704,"y":278,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Eldermere","region":"Eldoria","x":517,"y":322,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Akasya","region":"Eldoria","x":567,"y":347,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Mistral","region":"Eldoria","x":678,"y":312,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Yaprak Ormanı","region":"Eldoria","x":675,"y":348,"type":"Yerleşim","terrain":"orman","protector":"Bağımsız"},{"name":"Karhisar","region":"Thalgrim","x":647,"y":101,"type":"Yerleşim","terrain":"dağ","protector":"Bağımsız"},{"name":"Gökbeçit","region":"Thalgrim","x":706,"y":126,"type":"Yerleşim","terrain":"dağ","protector":"Bağımsız"},{"name":"Ayarkaet","region":"Thalgrim","x":911,"y":112,"type":"Yerleşim","terrain":"dağ","protector":"Bağımsız"},{"name":"Kışvadi","region":"Thalgrim","x":1007,"y":106,"type":"Yerleşim","terrain":"dağ","protector":"Bağımsız"},{"name":"Bozkurtüstü","region":"Vardun","x":938,"y":184,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Demirkapı","region":"Vardun","x":850,"y":211,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Rüzgârkent","region":"Vardun","x":1026,"y":202,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Sarıtepe","region":"Vardun","x":837,"y":273,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Gölgeçit","region":"Vardun","x":806,"y":306,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Kervanyolu","region":"Vardun","x":847,"y":338,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Taşova","region":"Vardun","x":931,"y":352,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Yıldıztepe","region":"Vardun","x":1005,"y":331,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Kumtepe","region":"Vardun","x":1047,"y":362,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Ejder Zirvesi","region":"Drakmir","x":1257,"y":144,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Karagar","region":"Drakmir","x":1348,"y":153,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Kanaltepe","region":"Drakmir","x":1124,"y":212,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Volkan Dağı","region":"Drakmir","x":1238,"y":205,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Lavkale","region":"Drakmir","x":1377,"y":204,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Karatepe","region":"Drakmir","x":1122,"y":257,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Zindan Geçidi","region":"Drakmir","x":1308,"y":252,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Alevkale","region":"Drakmir","x":1420,"y":257,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Taşhisar","region":"Drakmir","x":1149,"y":306,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Morçukur","region":"Drakmir","x":1340,"y":322,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Obsidyen","region":"Drakmir","x":1410,"y":305,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Kızıl Vadi","region":"Drakmir","x":1163,"y":347,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Kanal Kalesi","region":"Drakmir","x":1239,"y":360,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Zindankaya","region":"Drakmir","x":1338,"y":363,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Cehennem Boğazı","region":"Drakmir","x":1414,"y":343,"type":"Yerleşim","terrain":"volkanik","protector":"Bağımsız"},{"name":"Yinla","region":"Kaldarya Batı","x":520,"y":438,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Tirel","region":"Kaldarya Batı","x":612,"y":427,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Onyar","region":"Kaldarya Batı","x":689,"y":439,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Oyraz","region":"Kaldarya Batı","x":530,"y":473,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Belvar","region":"Kaldarya Batı","x":501,"y":514,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Nifel","region":"Kaldarya Batı","x":523,"y":564,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Solar","region":"Kaldarya Batı","x":601,"y":566,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Gökpınar","region":"Kaldarya Batı","x":685,"y":553,"type":"Yerleşim","terrain":"orman/nehir","protector":"Eldoria himayesi • Özerk"},{"name":"Akpınar","region":"Kaldarya Merkez","x":779,"y":414,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Sancaktepe","region":"Kaldarya Merkez","x":789,"y":466,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Börü Geçit","region":"Kaldarya Merkez","x":954,"y":429,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Yaşlıhisar","region":"Kaldarya Merkez","x":866,"y":422,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Taç Ovası","region":"Kaldarya Merkez","x":786,"y":533,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Kümüreçit","region":"Kaldarya Merkez","x":972,"y":537,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Gümüşkaya","region":"Kaldarya Merkez","x":791,"y":584,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Eski Kaldarya","region":"Kaldarya Merkez","x":882,"y":590,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Keleştepe","region":"Kaldarya Merkez","x":979,"y":596,"type":"Yerleşim","terrain":"dağ/nehir","protector":"Bağımsız Kaldarya"},{"name":"Konukgeçit","region":"Kaldarya Doğu","x":1107,"y":426,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Karageçit","region":"Kaldarya Doğu","x":1200,"y":423,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Kızılkaya","region":"Kaldarya Doğu","x":1072,"y":470,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Güneçtepe","region":"Kaldarya Doğu","x":1268,"y":469,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Kızıltepe","region":"Kaldarya Doğu","x":1080,"y":533,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Tarmtepe","region":"Kaldarya Doğu","x":1279,"y":536,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Erenicce","region":"Kaldarya Doğu","x":1186,"y":552,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Benlabağ","region":"Kaldarya Doğu","x":1086,"y":586,"type":"Yerleşim","terrain":"volkanik","protector":"Drakmir himayesi • Özerk"},{"name":"Kızılkum","region":"Zafran","x":524,"y":653,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Karahisar","region":"Zafran","x":670,"y":652,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Sıcakova","region":"Zafran","x":490,"y":709,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Miraç","region":"Zafran","x":728,"y":712,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Bahar Limanı","region":"Zafran","x":477,"y":748,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Altın Vaha","region":"Zafran","x":573,"y":731,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Serap Kenti","region":"Zafran","x":674,"y":733,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Rakkiss","region":"Zafran","x":766,"y":747,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Tuzdağı","region":"Zafran","x":514,"y":788,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Çöl Tapınağı","region":"Zafran","x":606,"y":780,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Tusdağ","region":"Zafran","x":705,"y":786,"type":"Yerleşim","terrain":"çöl","protector":"Bağımsız"},{"name":"Aylan","region":"Lunaris","x":1251,"y":621,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Gümüşkale","region":"Lunaris","x":1330,"y":635,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Ruhtepe","region":"Lunaris","x":1185,"y":660,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Yıldızova","region":"Lunaris","x":1324,"y":668,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Kınaskale","region":"Lunaris","x":1120,"y":694,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Gölgeçit Geçit","region":"Lunaris","x":1412,"y":679,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Işıkburnu","region":"Lunaris","x":1145,"y":747,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Elfatun Orman","region":"Lunaris","x":1290,"y":758,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Morova","region":"Lunaris","x":1400,"y":756,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"},{"name":"Sessiz Vadi","region":"Lunaris","x":1206,"y":791,"type":"Yerleşim","terrain":"mistik/dağ","protector":"Bağımsız"}];
 
 var K={at:"Sancaktepe",movePoints:3,maxMove:3,actionPoints:3,maxActionPoints:3,kingArmy:{name:"Kaldarya Kral Ordusu",soldiers:12,age:38,serviceTurns:12,battles:3,supply:78,morale:76,traits:["Disiplinli"]},turn:1,gold:42,food:430,mode:"",info:{},tax:50,aid:25,military:50,peopleHappy:62,peopleLoyal:66,armyLoyal:71,news:[],selectedCity:null,year:1,month:1,playerRegion:"Kaldarya Merkez",warFatigue:0,battleHistory:[],sieges:{},diplomaticMemory:{}};
 for(var i=0;i<DATA.length;i++)K.info[DATA[i].name]=DATA[i];
@@ -1543,7 +1543,7 @@ function v312Battle(ar,attackers,dr,city){
  var aN=attackers.reduce(function(n,u){return n+(u.soldiers||0)},0);
  var dN=defenders.reduce(function(n,u){return n+(u.soldiers||0)},0);
  var pass=typeof PASS_CITIES!=="undefined"&&PASS_CITIES[city];
- if(pass)dp*=1.15;
+ /* V94: geçit savunması v31Strength içinde zaten uygulanır; ikinci 1.15 kaldırıldı. */
  var win=ap>dp;
  var aLoss=Math.min(aN,Math.max(1,Math.round(dN*(win?.25:.48)*(.88+Math.random()*.24))));
  var dLoss=Math.min(dN,Math.max(1,Math.round(aN*(win?.50:.25)*(.88+Math.random()*.24))));
@@ -3794,8 +3794,8 @@ var v49OldSetOwner=setOwner;
 setOwner=function(city,newOwner,by,force){
  var old=ownerOf(city),changed=v49OldSetOwner.apply(this,arguments);
  if(changed&&old&&old!==newOwner&&force!=="STATE_EVENT"){
-  settlements[city].occupation={owner:newOwner,previous:old,guarded:0,unguarded:0,capturedTurn:K.turn};
-  K.news.unshift("🏳 "+city+" alındı. İlk yıl yapı geliri azalır. El değiştirmeden iki tur geçene kadar garnizonsuz şehirde yıllık direniş riski %12'dir; sonra risk sıfırlanır.");
+  /* V93: Eski V49 iki-turluk direniş sistemi kaldırıldı. V91 üç BARış turu entegrasyonu tek kaynaktır. */
+  settlements[city].occupation=null;
  }
  return changed;
 };
@@ -3810,29 +3810,7 @@ v44CityBonuses=function(city){
  }
  return bonus;
 };
-function v49Occupations(){
- DATA.forEach(function(c){
-  var city=c.name,s=settlements[city],o=s&&s.occupation;
-  if(!o)return;
-  if(ownerOf(city)!==o.owner){s.occupation=null;return}
-  if(K.turn<=o.capturedTurn)return;
-  var guard=armyAtFor(o.owner,city);
-  if(guard&&guard.soldiers>0&&guard.supply>=20){
-   o.guarded++;o.unguarded=0;
-   if(o.guarded>=2){s.occupation=null;K.news.unshift("✅ "+city+" garnizonu düzeni sağladı; yapı üretimi normale döndü.")}
-  }else{
-   o.guarded=0;o.unguarded++;
-   if(o.unguarded>=2&&v283Owned(o.previous).length&&v331Authorized(o.owner,o.previous)){
-    s.occupation=null;
-    if(setOwner(city,o.previous,"Yerel direniş","STATE_EVENT"))
-     K.news.unshift("🚩 Garnizonsuz "+city+" yerel direnişle "+o.previous+" yönetimine döndü.");
-   }else if(o.unguarded>=2&&o.unguarded%2===0){
-    s.dev=Math.max(0,(s.dev||0)-3);
-    K.news.unshift("⚠ "+city+" garnizonsuz; yerel düzen ve gelişmişlik geriledi.");
-   }
-  }
- });
-}
+function v49Occupations(){return /* V93: legacy occupation disabled */}
 /* Her ordu bir turda yalnızca bir düşman şehrine saldırabilir. */
 var v49OldAIMove=v28MoveUnit;
 v28MoveUnit=function(region,unit){
@@ -4756,7 +4734,7 @@ v312Battle=function(attacker,units,defender,city){
  var ds=v312Defenders(defender,city),prev=V66_BATTLE;
  V66_BATTLE={id:++V66_BATTLE_SERIAL,attacker:attacker,defender:defender,
   attackPower:units.reduce(function(n,u){return n+v31Strength(u,city,false)},0),
- defendPower:ds.reduce(function(n,u){return n+v31Strength(u,city,true)},0)*(PASS_CITIES[city]?1.15:1)};
+ defendPower:ds.reduce(function(n,u){return n+v31Strength(u,city,true)},0)};
  var result;
  try{
   result=v66OldBattle.apply(this,arguments);
@@ -5353,7 +5331,7 @@ function v72AnnualDynasties(){
    if(p.name===d.king)p.age=d.kingAge;
    else if(p.name===d.heir)p.age=d.heirAge;
    else if(p.name===d.consortName)p.age=d.consortAge;
-   else if(!(d.children||[]).some(function(c){return c.name===p.name}))p.age++;
+   else if(!(d.children||[]).some(function(c){return c.name===p.name}))p.age=Math.round((Number(p.age||0)+.5)*2)/2;
   if(p.assignment)p.at=p.assignment.at;
   });
   if(!d.consortName&&d.kingAge>=18&&d.kingAge<=60){
@@ -5584,7 +5562,7 @@ familyHTML=function(){
  var h=v73OldFamilyHTML();
  var petition=K.dynastyPetitions.filter(function(e){return !e.done}).map(function(e){
   var i=K.dynastyPetitions.indexOf(e);
-  return '<div class="card"><b>⚠ '+v37Safe(e.name)+' yetki istiyor</b><div class="small">'+(K.turn-e.turn)+' yıl bekledi. Karar verilmezse ilişkisi bozulacak.</div><div class="row"><button onclick="v73ResolvePetition('+i+',\'yetki\')">Yetki ver • 15 altın</button><button onclick="v73ResolvePetition('+i+',\'gorus\')">Görüş • 1 EP</button><button onclick="v73ResolvePetition('+i+',\'reddet\')">Reddet</button></div></div>';
+  return '<div class="card"><b>⚠ '+v37Safe(e.name)+' yetki istiyor</b><div class="small">'+((K.turn-e.turn)*6)+' ay bekledi. Karar verilmezse ilişkisi bozulacak.</div><div class="row"><button onclick="v73ResolvePetition('+i+',\'yetki\')">Yetki ver • 15 altın</button><button onclick="v73ResolvePetition('+i+',\'gorus\')">Görüş • 1 EP</button><button onclick="v73ResolvePetition('+i+',\'reddet\')">Reddet</button></div></div>';
  }).join('');
  var profiles=dynasty.filter(function(p){return p.alive}).map(function(p){
   var x=v73Profile(K.playerRegion,p),op=v73Opinion(K.playerRegion,p,K.kingName);
@@ -6249,7 +6227,7 @@ v42Attack=function(from,to,army){
  var handled=v82PreviousAttack.apply(this,arguments);
  if(handled&&v42Pending&&v42Pending.from===from&&v42Pending.to===to){
   var defenders=v312Defenders(v42Pending.enemy,to),enemySoldiers=defenders.reduce(function(n,u){return n+u.soldiers},0),
-      attacking=v31Strength(army,to,false),defending=defenders.reduce(function(n,u){return n+v31Strength(u,to,true)},0)*(PASS_CITIES[to]?1.15:1),box=el('panel');
+      attacking=v31Strength(army,to,false),defending=defenders.reduce(function(n,u){return n+v31Strength(u,to,true)},0),box=el('panel');
   if(box)box.innerHTML+='<div class="card"><b>Toplam asker:</b> '+army.soldiers+' / '+enemySoldiers+
    ' · Savunan ordu: '+defenders.length+'<br><b>Hesaplanan güç:</b> '+Math.round(attacking)+' / '+Math.round(defending)+
    '<div class="small">Her ordunun askerleri toplanır; ordu sayısı tek başına güç vermez. Moral, ikmal, arazi ve komutan etkileri sınırlı oranlarda uygulanır.</div></div>';
@@ -6373,7 +6351,7 @@ function v87Kill(p,region,cause){if(!v87Live(p))return;if(p.role==='Kral'){if(re
 function v87ResolvePlans(){V87.plans.forEach(function(s){if(s.status!=='hazırlanıyor'||s.due>K.turn)return;var a=V87.people[s.actor]&&V87.people[s.actor].p,b=V87.people[s.target]&&V87.people[s.target].p;if(!v87Eligible(a,b,s.type)){s.status='koşullar değiştiği için iptal';if(a)v87Entry(a,'plan',V87_TYPES[s.type].name+' planı: '+s.status);return}var chance=v87Chance(a,b,s.type,s.funding),success=Math.random()*100<chance;s.chance=chance;s.status=success?'başarılı':'başarısız';v87Entry(a,'entrika',V87_TYPES[s.type].name+' '+s.status+'. Hedef: '+b.name+'.',success&&s.type!=='talep'?-2:0);if(success){if(s.type==='suikast')v87Kill(b,s.region,'Hanedan içi suikast');if(s.type==='zehir'){b.v87.poison={remaining:3,actor:s.actor};v87Entry(b,'sağlık','Zehirlenme nedeniyle üç tur sürecek hastalık başladı.')}if(s.type==='karalama'){b.prestige=v73Bound((b.prestige||0)-15,0,100);b.v87.influence=Math.max(0,b.v87.influence-12);v87Entry(b,'itibar','Aile içindeki karalama sonucunda itibar ve nüfuz kaybetti.')}if(s.type==='talep'){a.prestige=v73Bound((a.prestige||0)+8,0,100);a.v87.authorityUntil=K.turn+5;b.v87.influence=Math.max(0,b.v87.influence-10);v87Entry(a,'yetki','Hükümdardan beş tur süreli siyasi yetki aldı.',1)}}if(s.type!=='talep'&&Math.random()<(success?.2:.45)){a.prestige=Math.max(0,(a.prestige||0)-12);a.v87.influence=Math.max(0,a.v87.influence-10);v73Adjust(s.region,b,a.name,-30);v87Entry(a,'açığa çıkma','Entrikası açığa çıktı; saray itibarı ve aile ilişkileri zarar gördü.',-2)}})}
 var V87_STAGES=[5,13,16,18,46];
 function v87Choose(id,choice,ai){var event=V87.milestones[id],item=event&&V87.people[event.person];if(!item||event.done||!v87Live(item.p)||item.p.captured||(!ai&&item.region!==K.playerRegion)||[0,1,2].indexOf(choice)<0)return false;var p=item.p,x=v73Profile(item.region,p),keys=['courage','stewardship','diplomacy'],labels=['Askerî eğitim ve cesaret','Şehir yönetimi ve sorumluluk','Saray ilişkileri ve uzlaşma'];x[keys[choice]]=v73Bound(x[keys[choice]]+10,0,100);p.v87.influence=Math.min(100,p.v87.influence+3);event.done=true;v87Entry(p,'dönüm noktası',event.age+' yaş dönüm noktası: '+labels[choice]+' yolunu seçti. Bu deneyim gelecekteki görev ve lakaplarını etkileyebilir.');if(!ai)v85Intrigue();return true}
-function v87Annual(){if(V87.lastTurn===K.turn)return;V87.lastTurn=K.turn;v87Refresh();Object.keys(V87.people).forEach(function(id){var o=V87.people[id],p=o.p,l=p.v87;if(v87Live(p)){V87_STAGES.forEach(function(age){if(l.age<age&&p.age>=age&&o.kind==='family'&&!V87.milestones.some(function(m){return m.person===l.id&&m.age===age})){var e={person:l.id,age:age,done:false};V87.milestones.push(e);if(o.region!==K.playerRegion){var x=v73Profile(o.region,p),values=[x.courage,x.stewardship,x.diplomacy];v87Choose(V87.milestones.length-1,values.indexOf(Math.max.apply(null,values)),true)}}});if(!p.captured){l.influence=Math.min(100,l.influence+(p.age>=18?2+(p.role==='Kral'?2:0)+(l.authorityUntil>K.turn?1:0):p.age>=13?1:0));if(l.poison){l.poison.remaining--;p.stress=v73Bound((p.stress||0)+8,0,100);if(Math.random()<(p.age>=65?.22:.1))v87Kill(p,o.region,'Hanedan içi zehirleme');else if(l.poison.remaining<=0){delete l.poison;v87Entry(p,'sağlık','Zehirlenmeden sağ kurtuldu.')}}}}l.age=p.age});Object.keys(settlements).forEach(function(city){var st=settlements[city],r=ownerOf(city),p=st.governor&&v87Governor(r,st.governor,city);if(!p||!v87Live(p)||p.captured||p.assignment||p.role==='Kral')return;var l=v87Register(p,r),x=v73Profile(r,p),delta=x.stewardship>=70?1:x.stewardship<=30?-1:0;l.stats.governorYears++;var old=st.dev||0;st.dev=v73Bound(old+delta,0,100);if(st.dev!==old){l.stats[delta>0?'goodYears':'badYears']++;v87Entry(p,'valilik',city+' yönetiminde gelişmişlik '+(delta>0?'arttı':'azaldı')+': '+old+' → '+st.dev+'.',delta)}v87Nickname(p)});v87ResolvePlans();Object.keys(V87.people).forEach(function(id){var o=V87.people[id],p=o.p;if(o.kind!=='family'||!v87Live(p)||p.captured||p.age<18)return;var x=v73Profile(o.region,p),propensity=v73Bound((x.ambition-50)/500+(50-x.mercy)/800,0,.14);if(Math.random()>=propensity)return;var candidates=v72Members(o.region).filter(function(b){return v87Eligible(p,b,'karalama')&&v73Opinion(o.region,p,b.name)<20});if(!candidates.length)return;var b=candidates[Math.floor(Math.random()*candidates.length)],type=x.mercy<25&&x.ambition>75?'suikast':x.tactics>65?'zehir':'karalama';v87Launch(p.v87.id,b.v87.id,type,true)});v87DeathScan()}
+function v87Annual(){if(V87.lastTurn===K.turn)return;V87.lastTurn=K.turn;v87Refresh();Object.keys(V87.people).forEach(function(id){var o=V87.people[id],p=o.p,l=p.v87;if(v87Live(p)){V87_STAGES.forEach(function(age){if(l.age<age&&p.age>=age&&o.kind==='family'&&!V87.milestones.some(function(m){return m.person===l.id&&m.age===age})){var e={person:l.id,age:age,done:false};V87.milestones.push(e);if(o.region!==K.playerRegion){var x=v73Profile(o.region,p),values=[x.courage,x.stewardship,x.diplomacy];v87Choose(V87.milestones.length-1,values.indexOf(Math.max.apply(null,values)),true)}}});if(!p.captured){l.influence=Math.min(100,l.influence+(p.age>=18?2+(p.role==='Kral'?2:0)+(l.authorityUntil>K.turn?1:0):p.age>=13?1:0));if(l.poison){l.poison.remaining--;p.stress=v73Bound((p.stress||0)+8,0,100);if(Math.random()<(p.age>=65?.22:.1))v87Kill(p,o.region,'Hanedan içi zehirleme');else if(l.poison.remaining<=0){delete l.poison;v87Entry(p,'sağlık','Zehirlenmeden sağ kurtuldu.')}}}}l.age=p.age});Object.keys(settlements).forEach(function(city){var st=settlements[city],r=ownerOf(city),p=st.governor&&v87Governor(r,st.governor,city);if(!p||!v87Live(p)||p.captured||p.assignment||p.role==='Kral')return;var l=v87Register(p,r),x=v73Profile(r,p),delta=x.stewardship>=70?1:x.stewardship<=30?-1:0;l.stats.governorYears=(l.stats.governorYears||0)+.5;var old=st.dev||0;st.dev=v73Bound(old+delta,0,100);if(st.dev!==old){l.stats[delta>0?'goodYears':'badYears']=(l.stats[delta>0?'goodYears':'badYears']||0)+.5;v87Entry(p,'valilik',city+' yönetiminde gelişmişlik '+(delta>0?'arttı':'azaldı')+': '+old+' → '+st.dev+'.',delta)}v87Nickname(p)});v87ResolvePlans();Object.keys(V87.people).forEach(function(id){var o=V87.people[id],p=o.p;if(o.kind!=='family'||!v87Live(p)||p.captured||p.age<18)return;var x=v73Profile(o.region,p),propensity=v73Bound((x.ambition-50)/500+(50-x.mercy)/800,0,.14);if(Math.random()>=propensity)return;var candidates=v72Members(o.region).filter(function(b){return v87Eligible(p,b,'karalama')&&v73Opinion(o.region,p,b.name)<20});if(!candidates.length)return;var b=candidates[Math.floor(Math.random()*candidates.length)],type=x.mercy<25&&x.ambition>75?'suikast':x.tactics>65?'zehir':'karalama';v87Launch(p.v87.id,b.v87.id,type,true)});v87DeathScan()}
 var v87OldAnnual=v67Annual;v67Annual=function(){v87Refresh();var out=v87OldAnnual.apply(this,arguments);v87Annual();return out};
 function v87Biography(id){v87Refresh();v87DeathScan();var o=V87.people[id];if(!o||o.kind==='family'&&!v85Known(o.region,o.p))return;var p=o.p,l=p.v87,s=l.stats,d=p.deathRecord;panel(v85Header(v37Safe(p.name)+(l.nickname?' “'+v37Safe(l.nickname)+'”':''))+'<div class="card">'+v87RawPortrait(p.name,p.role,p)+'<b>'+v37Safe(o.region)+' • '+v37Safe(p.role||'General')+'</b><p>'+(v87Live(p)?p.age+' yaş':(d?d.age:p.age)+' yaşında öldü'+(d?' • Ölüm yılı '+d.year:'')+' • '+v37Safe(d?d.cause:'Eski ölüm kaydı'))+'</p>Savaş: '+s.wins+' zafer / '+s.losses+' yenilgi<br>Valilik: '+s.governorYears+' tur • '+s.goodYears+' başarılı / '+s.badYears+' başarısız yıl<br>Kaydedilen katkı: '+s.benefit+' • Zarar: '+s.harm+'</div>'+l.entries.filter(function(e){return o.region===K.playerRegion||['plan','entrika','açığa çıkma'].indexOf(e.type)<0}).map(function(e){return '<div class="card"><b>Yıl '+e.year+' • '+v37Safe(e.type)+'</b><p>'+v37Safe(e.text)+'</p></div>'}).join(''))}
 var v87RawPortrait=portraitHTML;portraitHTML=function(name,role,p){var h=v87RawPortrait.apply(this,arguments);if(!p||!p.v87)return h;return '<div class="v87Portrait '+(!v87Live(p)?'v87Dead':'')+'" role="button" tabindex="0" aria-label="Yaşam kaydı" onclick="event.stopPropagation();v87Biography('+p.v87.id+')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();v87Biography('+p.v87.id+')}" >'+h+'</div>'};
@@ -6680,7 +6658,7 @@ function v91ForceWar(a,b){
  wars[a+'|'+b]=true;wars[b+'|'+a]=true;v91BreakAllTreaties(a,b);
  try{var d=v30D(a,b);d.warTurns=0}catch(e){}
  try{var s=v34S(a,b);s.stance='war';s.warning=false;s.warStart=auth.declaredTurn}catch(e){}
- if(!was&&typeof v33Event==='function')v33Event('war','Kesin Savaş Kaydı',a+' → '+b+' savaşı tek savaş kaydında etkinleştirildi.',a,b);
+ /* V93: setWar zaten tek RESMÎ SAVAŞ İLANI kaydı oluşturur; ikinci yinelenen kayıt kaldırıldı. */
  return v331Authorized(a,b)&&atWar(a,b)
 }
 /* Alt katman savaş kaydını açtıysa wars aynalanır; barışta da temizlenir. AI'nin reddedilmiş savaş kararını zorlamaz. */
@@ -6756,7 +6734,7 @@ setTimeout(function(){try{v72Members(K.playerRegion);v66LayoutArmies();v283Regio
 /* ===== V92 — 6 AYLIK TAKVİM + HANEDAN EVLİLİKLERİ + SADAKAT + KİŞİSEL EKONOMİ ===== */
 (function(){
 window.KALDARYA_BUILD='V92';
-document.title='Kaldarya V92.1 — Hanedan Evlilikleri ve Saray Ekonomisi';
+document.title='Kaldarya V93 — Derin Test ve Mantık Düzeltmeleri';
 
 function v92Clamp(n,a,b){return Math.max(a,Math.min(b,n))}
 function v92Sex(p){
@@ -6907,7 +6885,7 @@ var v92OldHeir=v72Heir;
 function v92DirectChildren(region){
  var ruler=v73Ruler(region);
  return v92Members(region).filter(function(p){
-   return p.alive&&!p.captured&&!p.v92.foreignMarriage&&p.name!==ruler&&
+   return p.alive&&!p.captured&&p.name!==ruler&&
      (p.parentKing===ruler||region===K.playerRegion&&/Edric|Mira/.test(p.name)&&/Arven/.test(ruler));
  });
 }
@@ -6918,7 +6896,7 @@ function v92RefreshHeir(region){
  var chosen=males[0]||females[0]||null;
  if(!chosen){
    var old=v92OldHeir(region);
-   if(old&&old.alive&&!old.captured&&!old.v92.foreignMarriage)chosen=old;
+   if(old&&old.alive&&!old.captured)chosen=old;
  }
  members.forEach(function(p){if(p.role==='Resmî Varis'&&p!==chosen)p.role='Çocuk'});
  if(chosen)chosen.role='Resmî Varis';
@@ -7244,7 +7222,342 @@ setTimeout(function(){
    if(el('cal'))el('cal').textContent='Yıl '+K.year+' • Ay '+K.month;
  }catch(e){console.error('V92 init',e)}
 },1000);
+
+/* V93 erişim düzeltmesi: dinamik HTML onclick işleyicileri global kapsamdan çağrılır. */
+window.v92Relations=v92Relations;
+window.v92Gift=v92Gift;
+window.v92GovernorPicker=v92GovernorPicker;
+window.v92SetGovernor=v92SetGovernor;
+window.v92MaleMarriage=v92MaleMarriage;
+window.v92ForeignMarriageMenu=v92ForeignMarriageMenu;
+window.v92SendBride=v92SendBride;
+window.v92RefreshHeir=v92RefreshHeir;
+window.v92Members=v92Members;
+window.v92InitPerson=v92InitPerson;
+window.v92Loyalty=v92Loyalty;
+window.v92AdjustLoyalty=v92AdjustLoyalty;
+window.v92Income=v92Income;
+window.v92PersonalEconomyTurn=v92PersonalEconomyTurn;
+window.v92TransferToTreasury=v92TransferToTreasury;
+window.v92BridePrice=v92BridePrice;
 })();
 </script>
 
+
+<script>
+/* ===== V93 — DERİN TEST / SAVAŞ / HANEDAN / İŞGAL TUTARLILIK KATMANI ===== */
+(function(){
+window.KALDARYA_BUILD='V93';
+document.title='Kaldarya V93 — Derin Test ve Mantık Düzeltmeleri';
+
+/* 1) SAVAŞ: Oyuncu anlaşmaları kendi eliyle feshetmeden savaş ilan edemez. */
+function v93TreatyLabel(t){return ({trade:'Ticaret',access:'Askerî Geçiş',nonAggression:'Saldırmazlık',friendship:'Dostluk',defensive:'Savunma İttifakı',alliance:'İttifak'})[t]||t}
+function v93ActiveTreaties(a,b){
+ var types=['trade','access','nonAggression','friendship','defensive','alliance'],out=[];
+ types.forEach(function(t){try{if(v30Has(a,b,t))out.push(t)}catch(e){}});
+ if(a===K.playerRegion&&treaties[b]){
+  if(treaties[b].access&&out.indexOf('access')<0)out.push('access');
+  if(treaties[b].friendship&&out.indexOf('friendship')<0)out.push('friendship');
+  if(treaties[b].alliance&&out.indexOf('alliance')<0)out.push('alliance');
+ }
+ if(b===K.playerRegion&&treaties[a]){
+  if(treaties[a].access&&out.indexOf('access')<0)out.push('access');
+  if(treaties[a].friendship&&out.indexOf('friendship')<0)out.push('friendship');
+  if(treaties[a].alliance&&out.indexOf('alliance')<0)out.push('alliance');
+ }
+ return out;
+}
+function v93PlayerWarBlocked(other){
+ var active=v93ActiveTreaties(K.playerRegion,other);
+ if(!active.length)return false;
+ say('⛔ '+other+' ile savaş ilan edilemez. Önce şu anlaşmaları Diplomasi panelinden feshet: <b>'+active.map(v93TreatyLabel).join(', ')+'</b>.');
+ return true;
+}
+var v93OldDeclareWar=declareWarUnified;
+declareWarUnified=function(region){
+ if(!region||region===K.playerRegion)return false;
+ if(v331Authorized(K.playerRegion,region)){say('⚔ '+region+' ile savaş zaten sürüyor.');return true}
+ if(v93PlayerWarBlocked(region))return false;
+ var ok=v91ForceWar(K.playerRegion,region);
+ if(ok){say('⚔ '+region+' ile resmî savaş başladı. Fetih/saldırı bir sonraki turdan itibaren açılır.');return true}
+ say('⛔ Savaş ilanı savaş kaydına geçirilemedi.');return false;
+};
+var v93OldV40Resolve=v40Resolve;
+v40Resolve=function(p){
+ if(p&&p.kind==='war'&&p.other){
+  if(v331Authorized(K.playerRegion,p.other)){say('⚔ '+p.other+' ile savaş zaten sürüyor.');return true}
+  if(v93PlayerWarBlocked(p.other))return false;
+  if(v91ForceWar(K.playerRegion,p.other)){
+   var msg='🚨 '+p.other+' için resmî savaş kaydı açıldı. Saldırı/fetih en erken sonraki turda yapılabilir.';
+   K.news.unshift('Tur '+K.turn+': '+msg);say(msg);return true;
+  }
+  say('⛔ Savaş ilanı kayda geçirilemedi.');return false;
+ }
+ return v93OldV40Resolve.apply(this,arguments);
+};
+
+/* Savaş varken anlaşma görünmemeli; savaş açıldığı anda eski/ikincil kayıtlardaki anlaşmaları da temiz tut. */
+var v93SetWar=setWar;
+setWar=function(a,b,on){
+ var was=v331Authorized(a,b),out=v93SetWar.apply(this,arguments),key=v331Key(a,b);
+ if(on===false){
+  /* V93: barış resmî savaş kaydını kesin kapatır; geç dönem sarmalayıcıları bunu geri açamaz. */
+  V331_WAR_AUTH[key]={active:false,endedTurn:K.turn,endedYear:K.year,endedMonth:K.month};
+  wars[a+'|'+b]=wars[b+'|'+a]=false;
+  try{var ds=v34S(a,b);if(ds){ds.stance='peace';ds.warning=false}}catch(e){}
+  if(was&&typeof v33Event==='function'){
+   var duplicate=(typeof V33_EVENTS!=='undefined')&&V33_EVENTS.some(function(e){return e.type==='peace'&&e.turn===K.turn&&((e.a===a&&e.b===b)||(e.a===b&&e.b===a))});
+   if(!duplicate)v33Event('peace','RESMÎ BARIŞ',a+' ↔ '+b+' savaşı sona erdi.',a,b);
+  }
+  return true;
+ }
+ if(v331Authorized(a,b)){
+  try{v91BreakAllTreaties(a,b)}catch(e){}
+  wars[a+'|'+b]=wars[b+'|'+a]=true;
+ }
+ return out;
+};
+
+/* 2) ESKİ İŞGAL SİSTEMİ TAMAMEN DEVRE DIŞI: yalnız V91 3 barış turu geçerli. */
+try{v49Occupations=function(){return}}catch(e){}
+var v93SetOwner=setOwner;
+setOwner=function(city,newOwner,by,force){
+ var changed=v93SetOwner.apply(this,arguments);
+ if(changed&&settlements[city]){
+  settlements[city].occupation=null;
+  /* Eski V49 mesajı başka sarmalayıcıdan kaldıysa temizle. */
+  K.news=K.news.filter(function(n){return !(String(n).indexOf(city+' alındı. İlk yıl yapı geliri')>=0)});
+ }
+ return changed;
+};
+v311SetOwner=setOwner;v312RawSetOwner=setOwner;v313RawSetOwner=setOwner;
+
+/* 3) YABANCI SARAYA EVLENEN KIZ ÇOCUĞU, ERKEK ÇOCUK YOKSA VERASET DIŞI KALMAZ. */
+function v93Sex(p){return p&&p.gender?p.gender:(/^Prenses\b|^Kraliçe\b/.test((p&&p.name)||'')?'female':'male')}
+function v93SuccessionCandidates(region){
+ var ruler=v73Ruler(region),members=v72Members(region).filter(function(p){return p.alive&&!p.captured&&p.name!==ruler});
+ var direct=members.filter(function(p){return p.parentKing===ruler||region===K.playerRegion&&/Edric|Mira/.test(p.name)&&/Arven/.test(ruler)});
+ function order(list,sex){return list.filter(function(p){return v93Sex(p)===sex}).sort(function(a,b){return (b.age||0)-(a.age||0)})}
+ return order(direct,'male').concat(order(direct,'female'));
+}
+function v93RefreshHeir(region){
+ var candidates=v93SuccessionCandidates(region),chosen=candidates[0]||null,members=v72Members(region);
+ if(!chosen){
+  var others=members.filter(function(p){return p.alive&&!p.captured&&p.name!==v73Ruler(region)&&p.role!=='Eş'&&p.role!=='Kraliçe Ana'&&p.role!=='Hanedan Eşi'&&p.age>=0});
+  var male=others.filter(function(p){return v93Sex(p)==='male'}).sort(function(a,b){return (b.age||0)-(a.age||0)});
+  var female=others.filter(function(p){return v93Sex(p)==='female'}).sort(function(a,b){return (b.age||0)-(a.age||0)});
+  chosen=male[0]||female[0]||null;
+ }
+ members.forEach(function(p){if(p.role==='Resmî Varis'&&p!==chosen)p.role='Çocuk'});
+ if(chosen)chosen.role='Resmî Varis';
+ if(region!==K.playerRegion){var d=v28State(region).dynasty;if(chosen){d.heir=chosen.name;d.heirAge=chosen.age;d.heirAlive=true}else{d.heir=null;d.heirAge=null;d.heirAlive=false}}
+ return chosen;
+}
+v72Heir=v93RefreshHeir;
+var v93PlayerSuccession=v39PlayerSuccession;
+v39PlayerSuccession=function(city){
+ v93RefreshHeir(K.playerRegion);var before=K.kingName,out=v93PlayerSuccession.apply(this,arguments),now=K.kingName;
+ if(now&&now!==before){
+  var p=dynasty.find(function(x){return x.alive&&x.role==='Kral'})||v72Character(K.playerRegion,now);
+  if(p){
+   p.v92&&(p.v92.foreignMarriage=null);p.foreignMarriage=null;p.at=capitals[K.playerRegion];
+   if(p.v92&&p.v92.gold>0){var amount=p.v92.gold;p.v92.gold=0;K.gold+=amount;K.news.unshift('💰 '+p.name+' tahta çıkarken önceki '+amount+' kişisel altını devlet hazinesine aktarıldı. Kralın ayrı kişisel cüzdanı yok.');}
+  }
+ }
+ return out;
+};
+var v93ForeignSuccession=v28Succession;
+v28Succession=function(region,city){
+ if(region!==K.playerRegion)v93RefreshHeir(region);var before=v73Ruler(region),out=v93ForeignSuccession.apply(this,arguments),now=v73Ruler(region);
+ if(now&&now!==before){
+  var p=v72Members(region).find(function(x){return x.alive&&x.role==='Kral'})||v72Character(region,now);
+  if(p){
+   p.v92&&(p.v92.foreignMarriage=null);p.foreignMarriage=null;p.at=v283Capital(region)||capitals[region];
+   if(p.v92&&p.v92.gold>0){var amount=p.v92.gold;p.v92.gold=0;var st=v28State(region);st.gold=(st.gold||0)+amount;K.news.unshift('💰 '+p.name+' tahta çıkarken önceki '+amount+' kişisel altını '+region+' hazinesine aktarıldı.');}
+  }
+ }
+ return out;
+};
+
+/* 4) AİLE AĞACI: ölü üyeler ayrı sepete taşınmaz; gerçek ebeveyn/eş dalında gri kalır. */
+function v93EnsureFamilyLinks(){
+ v87Refresh();
+ dynasty.forEach(function(p){if(!p.v87)v87Register(p,K.playerRegion,'family')});
+ dynasty.forEach(function(p){
+  if(p.marriedTo){var s=dynasty.find(function(x){return x.name===p.marriedTo});if(s&&s.v87){p.v87.spouse=s.v87.id;s.v87.spouse=p.v87.id}}
+  if(p.parentKing){var par=dynasty.find(function(x){return x.name===p.parentKing});if(par&&par.v87){
+   if(p.v87.parents.indexOf(par.v87.id)<0)p.v87.parents.push(par.v87.id);
+   if(par.v87.spouse&&p.v87.parents.indexOf(par.v87.spouse)<0)p.v87.parents.push(par.v87.spouse);
+  }}
+ });
+ /* Kurucu bağ: eski kral Odran → Arven. */
+ var old=dynasty.find(function(p){return !p.alive&&/Odran/.test(p.name)}),arven=dynasty.find(function(p){return /Arven/.test(p.name)});
+ if(old&&arven&&old.v87&&arven.v87&&arven.v87.parents.length===0)arven.v87.parents=[old.v87.id];
+}
+function v93Tile(p){
+ var d=p.deathRecord,life=p.alive!==false&&!p.dead;
+ return '<div class="person '+(life?'':'dead')+'">'+portraitHTML(p.name,p.role,p)+'<b>'+v37Safe(p.name)+'</b><div class="small">'+(life?(Math.round((p.age||0)*2)/2+' yaş • '+v37Safe(p.role)):'† '+v37Safe(p.role)+(d&&d.year?' • '+(d.year&&d.year!=='Bilinmiyor'?'Ölüm: Yıl '+d.year:'Ölüm yılı bilinmiyor'):''))+(p.captured?' • ⛓ Esir':'')+'</div>'+(p.v87?'<button onclick="v87Biography('+p.v87.id+')">Yaşam kaydı</button>':'')+'</div>';
+}
+function v93TreeShell(){
+ v93EnsureFamilyLinks();var byId={};dynasty.forEach(function(p){if(p.v87)byId[p.v87.id]=p});var rendered={};
+ function parents(p){return p&&p.v87?(p.v87.parents||[]).filter(function(id){return !!byId[id]}):[]}
+ function spouse(p){return p&&p.v87&&byId[p.v87.spouse]||null}
+ function childrenOf(ids){return dynasty.filter(function(c){if(!c.v87||rendered[c.v87.id])return false;return parents(c).some(function(id){return ids.indexOf(id)>=0})})}
+ function node(p){
+  if(!p||!p.v87||rendered[p.v87.id])return '';
+  var mate=spouse(p);rendered[p.v87.id]=1;if(mate)rendered[mate.v87.id]=1;
+  var ids=[p.v87.id];if(mate)ids.push(mate.v87.id);var kids=childrenOf(ids);
+  return '<div class="v93Branch"><div class="couple">'+v93Tile(p)+(mate?'<div class="marriage">💍</div>'+v93Tile(mate):'')+'</div>'+(kids.length?'<div class="line"></div><div class="children v93Children">'+kids.map(node).join('')+'</div>':'')+'</div>';
+ }
+ var roots=dynasty.filter(function(p){if(!p.v87||parents(p).length)return false;var s=spouse(p);return !(s&&parents(s).length)});
+ roots.sort(function(a,b){return ((b.age||0)-(a.age||0))});
+ var html=roots.map(node).join('');
+ var rest=dynasty.filter(function(p){return p.v87&&!rendered[p.v87.id]});if(rest.length)html+='<div class="generation">BAĞLANTISI ESKİ KAYITTA BELİRSİZ ÜYELER</div><div class="children">'+rest.map(v93Tile).join('')+'</div>';
+ return '<div class="familyShell v93Family"><div class="familyHead"><div style="font-size:22px">♛ AİLE AĞACI</div><div class="small">Ölen kişiler silinmez; eş, ebeveyn ve çocuk bağlantılarındaki yerlerinde gri kalır.</div></div><div class="tree">'+html+'</div></div>';
+}
+var v93FamilyHTML=familyHTML;
+familyHTML=function(){
+ var old=v93FamilyHTML.apply(this,arguments),tmp=document.createElement('div');tmp.innerHTML=old;var shell=tmp.querySelector('.familyShell');if(shell)shell.outerHTML=v93TreeShell();
+ Array.from(tmp.querySelectorAll('.small')).forEach(function(x){if(/^Anılan hanedan üyeleri:/i.test(x.textContent.trim()))x.remove()});
+ return tmp.innerHTML;
+};
+var style=document.createElement('style');style.id='v93-family-tree-style';style.textContent='.v93Family .tree{overflow:auto}.v93Branch{display:flex;flex-direction:column;align-items:center;min-width:150px}.v93Children{align-items:flex-start;gap:16px;flex-wrap:nowrap;overflow-x:auto;padding:8px 2px}.v93Children>.v93Branch{position:relative}.v93Children>.v93Branch:before{content:"";position:absolute;top:-8px;left:50%;width:2px;height:8px;background:#9f8142}.v93Family .person.dead{opacity:.45;filter:grayscale(1)}';document.head.appendChild(style);
+
+/* 5) 6 ay metin tutarlılığı. */
+var v93FamilyText=familyHTML;
+familyHTML=function(){return v93FamilyText.apply(this,arguments).replace(/(\d+) yıl bekledi\./g,function(_,n){return (Number(n)*6)+' ay bekledi.'}).replace(/Her tur 1 yıl/g,'Her tur 6 ay').replace(/Yıllık çocuk doğumu olasılığı/g,'6 aylık çocuk doğumu olasılığı')};
+
+/* 6) İki general ordusu ekonomik üst sınırıdır; üçüncü ordu kesin engellenir. AI da 2'yi aşamaz. */
+var v93AIGenerals=v91EnsureAIGenerals;
+v91EnsureAIGenerals=function(region){
+ var st=region!==K.playerRegion?v28State(region):null;if(st){var active=st.generals.filter(function(g){return g.alive&&!g.dead&&!g.captured&&g.soldiers>0});if(active.length>=2)return}
+ return v93AIGenerals.apply(this,arguments);
+};
+
+/* 7) Son güvenlik: Akpınar-Taşova daima kapalı; Konukgeçit-Kumtepe daima çift yönlü. */
+function v93Link(a,b){if(!FIXED_ROADS[a])FIXED_ROADS[a]=[];if(FIXED_ROADS[a].indexOf(b)<0)FIXED_ROADS[a].push(b)}
+function v93Unlink(a,b){if(FIXED_ROADS[a])FIXED_ROADS[a]=FIXED_ROADS[a].filter(function(x){return x!==b})}
+v93Unlink('Akpınar','Taşova');v93Unlink('Taşova','Akpınar');delete STRATEGIC_PASSES['Akpınar|Taşova'];delete STRATEGIC_PASSES['Taşova|Akpınar'];
+v93Link('Konukgeçit','Kumtepe');v93Link('Kumtepe','Konukgeçit');STRATEGIC_PASSES['Konukgeçit|Kumtepe']=1;STRATEGIC_PASSES['Kumtepe|Konukgeçit']=1;
+
+/* Test yardımcıları: oyun akışını değiştirmez, yalnız doğrulama için okunabilir sonuç döndürür. */
+window.v93SelfCheck=function(){
+ var own=DATA.filter(function(c){return ownerOf(c.name)===K.playerRegion}).length;
+ return {
+  build:window.KALDARYA_BUILD,
+  warSingleSource:atWar===undefined?false:true,
+  akpinarTasovaBlocked:!((FIXED_ROADS['Akpınar']||[]).indexOf('Taşova')>=0)&&!v63CanTraverse('Akpınar','Taşova',K.playerRegion),
+  konukKumtepe:(FIXED_ROADS['Konukgeçit']||[]).indexOf('Kumtepe')>=0&&(FIXED_ROADS['Kumtepe']||[]).indexOf('Konukgeçit')>=0,
+  ownCities:own,
+  playerGenerals:v91ActivePlayerGenerals().length,
+  v92Handlers:['v92Relations','v92Gift','v92GovernorPicker','v92SetGovernor','v92MaleMarriage','v92ForeignMarriageMenu','v92SendBride'].every(function(n){return typeof window[n]==='function'}),
+  oldOccupationDisabled:typeof v49Occupations==='function',
+  turnMonths:6
+ };
+};
+setTimeout(function(){try{v93EnsureFamilyLinks();v66LayoutArmies()}catch(e){console.error('V93 init',e)}},1100);
+})();
+</script>
+
+<script>
+/* ===== V94 — TEKRAR DERİN TEST SONRASI KÖK MANTIK DÜZELTMELERİ ===== */
+(function(){
+ window.KALDARYA_BUILD='V94';
+ document.title='Kaldarya V94 — Derin Test ve Mantık Düzeltmeleri';
+
+ /* 1) Yaşlıhisar: onaylanan konum ve rota her yüklemede garanti edilir. */
+ function v94Link(a,b){if(!FIXED_ROADS[a])FIXED_ROADS[a]=[];if(FIXED_ROADS[a].indexOf(b)<0)FIXED_ROADS[a].push(b)}
+ function v94Unlink(a,b){if(FIXED_ROADS[a])FIXED_ROADS[a]=FIXED_ROADS[a].filter(function(x){return x!==b})}
+ if(K.info&&K.info['Yaşlıhisar']){K.info['Yaşlıhisar'].x=866;K.info['Yaşlıhisar'].y=422}
+ var v94YH=document.querySelector('.settle[data-city="Yaşlıhisar"]');if(v94YH){v94YH.style.left='866px';v94YH.style.top='422px'}
+ v94Link('Akpınar','Yaşlıhisar');v94Link('Yaşlıhisar','Akpınar');
+ v94Link('Yaşlıhisar','Börü Geçit');v94Link('Börü Geçit','Yaşlıhisar');
+ v94Unlink('Akpınar','Börü Geçit');v94Unlink('Börü Geçit','Akpınar');
+ /* Kullanıcının son kesin yasağı. */
+ v94Unlink('Akpınar','Taşova');v94Unlink('Taşova','Akpınar');
+ delete STRATEGIC_PASSES['Akpınar|Taşova'];delete STRATEGIC_PASSES['Taşova|Akpınar'];
+ v94Link('Konukgeçit','Kumtepe');v94Link('Kumtepe','Konukgeçit');
+ STRATEGIC_PASSES['Konukgeçit|Kumtepe']=1;STRATEGIC_PASSES['Kumtepe|Konukgeçit']=1;
+
+ /* 2) General ordusu yuvası: esir ama yaşayan/askeri kalan ordu da 2'lik sınıra dahildir.
+       Böylece esir general varken yedek kurulup serbest kalınca 3 ordu oluşmaz. */
+ window.v91ActivePlayerGenerals=function(){
+  return generals.filter(function(g){return g&&!g.dead&&g.alive!==false&&g.soldiers>0&&(g.onDuty||g.captured)});
+ };
+ var v94GeneralCard=window.v91GeneralArmyCard;
+ window.v91GeneralArmyCard=function(city){
+  var h=v94GeneralCard(city),slots=v91ActivePlayerGenerals().length;
+  return h.replace('Aktif: '+slots+'/2','Ordu yuvası: '+slots+'/2').replace('Aktif General Ordusu','General Ordusu');
+ };
+
+ /* 3) AI'de iki general ordusu zorunluluğu: ücret hâlâ 20 altındır.
+       Hazine yetmezse eksik tutar seferberlik borcu olur ve sonraki gelirlerden otomatik kapanır. */
+ function v94AISlots(region){
+  var st=v28State(region);return (st.generals||[]).filter(function(g){return g&&g.alive!==false&&!g.dead&&g.soldiers>0});
+ }
+ function v94CreateAIGeneral(region){
+  if(region===K.playerRegion||V28_DESTROYED[region])return false;
+  var st=v28State(region),owned=v283Owned(region);if(!owned.length||v94AISlots(region).length>=2)return false;
+  var cost=V91_GENERAL_COST||20,paid=Math.min(Math.max(0,st.gold||0),cost),debt=cost-paid;
+  st.gold=Math.max(0,(st.gold||0)-paid);st.v94GeneralDebt=(st.v94GeneralDebt||0)+debt;
+  var n=(st.v91ArmySerial=(st.v91ArmySerial||0)+1),city=v283Capital(region)||owned[0].name,cand=v28Candidate(region,n);
+  var g={name:cand.name,army:region+' '+(v94AISlots(region).length+1)+'. General Ordusu',role:'general',soldiers:8,alive:true,dead:false,captured:false,at:city,morale:70,supply:70,experience:cand.experience,skill:cand.skill,traits:cand.traits,battles:0,dynastyCommander:null};
+  st.generals.push(g);v28CreateAIGeneralPawn(region,g);
+  K.news.unshift('⚔ '+region+' '+cost+' altın maliyetle yeni General Ordusu kurdu.'+(debt?' Eksik '+debt+' altın sonraki gelirlerden mahsup edilecek.':''));
+  return true;
+ }
+ window.v91EnsureAIGenerals=function(region){
+  if(region===K.playerRegion||V28_DESTROYED[region]||!v283Owned(region).length)return;
+  while(v94AISlots(region).length<2){if(!v94CreateAIGeneral(region))break}
+ };
+ var v94AITurn=v28AITurn;
+ v28AITurn=function(region){
+  var out=v94AITurn.apply(this,arguments),st=region!==K.playerRegion?v28State(region):null;
+  if(st&&st.v94GeneralDebt>0&&st.gold>0){var pay=Math.min(st.gold,st.v94GeneralDebt);st.gold-=pay;st.v94GeneralDebt-=pay;if(st.v94GeneralDebt<.001)st.v94GeneralDebt=0}
+  return out;
+ };
+
+ /* 4) Oyuncu savaş ilanının bütün eski giriş yolları aynı bekleyen-ilan sistemine gider.
+       Böylece eski dipAct/declareWarUnified yolu anlaşmaları otomatik feshedip kuralları atlayamaz. */
+ window.declareWarUnified=function(region){
+  if(!region||region===K.playerRegion)return false;
+  if(v331Authorized(K.playerRegion,region)){say('⚔ '+region+' ile savaş zaten sürüyor.');return true}
+  v40Declare(region);return true;
+ };
+
+ /* 5) Resmî savaş kaydı tek otoritedir. Eski wars/stance aynaları her tur buna göre düzeltilir. */
+ function v94ReconcileWars(){
+  var rs=v283Regions();
+  for(var i=0;i<rs.length;i++)for(var j=i+1;j<rs.length;j++){
+   var a=rs[i],b=rs[j],active=v331Authorized(a,b);
+   wars[a+'|'+b]=wars[b+'|'+a]=active;
+   try{var ds=v34S(a,b);if(ds){ds.stance=active?'war':'peace';if(!active)ds.warning=false}}catch(e){}
+   if(active){try{v91BreakAllTreaties(a,b)}catch(e){}}
+  }
+ }
+ var v94EndTurn=endTurn;
+ endTurn=function(){var out=v94EndTurn.apply(this,arguments);v94ReconcileWars();v283Regions().forEach(v91EnsureAIGenerals);try{v66LayoutArmies()}catch(e){}return out};
+
+ /* 6) Test bilgisi — oyun akışını değiştirmez. */
+ window.v94SelfCheck=function(){
+  var ruler=v72Character(K.playerRegion,v73Ruler(K.playerRegion)),own=DATA.filter(function(c){return ownerOf(c.name)===K.playerRegion}).length;
+  return {
+   build:KALDARYA_BUILD,
+   sixMonthCalendar:true,
+   kingWalletZero:!ruler||!ruler.v92||ruler.v92.gold===0,
+   governorCities:own,
+   playerGeneralSlots:v91ActivePlayerGenerals().length,
+   allAIGeneralSlots:v283Regions().filter(function(r){return r!==K.playerRegion&&!V28_DESTROYED[r]&&v283Owned(r).length}).every(function(r){return v94AISlots(r).length===2}),
+   akpinarTasovaBlocked:!v63CanTraverse('Akpınar','Taşova',K.playerRegion),
+   yaslihisarPosition:K.info['Yaşlıhisar']&&K.info['Yaşlıhisar'].x===866&&K.info['Yaşlıhisar'].y===422,
+   yaslihisarRoute:(FIXED_ROADS['Akpınar']||[]).indexOf('Yaşlıhisar')>=0&&(FIXED_ROADS['Yaşlıhisar']||[]).indexOf('Börü Geçit')>=0,
+   konukKumtepe:(FIXED_ROADS['Konukgeçit']||[]).indexOf('Kumtepe')>=0&&(FIXED_ROADS['Kumtepe']||[]).indexOf('Konukgeçit')>=0,
+   oldOccupationReallyDisabled:typeof v49Occupations==='function'&&/return\s*;?\s*\}/.test(String(v49Occupations)),
+   strategicPassSingleBonus:!/dp\s*\*=\s*1\.15/.test(String(v312Battle))
+  };
+ };
+
+ setTimeout(function(){try{v94ReconcileWars();v283Regions().forEach(v91EnsureAIGenerals);v66LayoutArmies()}catch(e){console.error('V94 init',e)}},1250);
+})();
+</script>
 </body></html>
