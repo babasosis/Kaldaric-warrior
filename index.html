@@ -7258,4 +7258,59 @@ var v96CSS=document.createElement('style');v96CSS.textContent='\
 if(el('choose'))el('choose').dataset.build='V96';var v96Heading=document.querySelector('#bar .dockHeading');if(v96Heading&&v96Heading.firstElementChild)v96Heading.firstElementChild.textContent='KRALLIK KONTROLLERİ • V96';sync();
 
 </script>
+<script>
+/* V97 — corrected central roads, scalable family tree, spouse-free member list
+   and safe city tapping while an army movement mode is active. */
+window.KALDARYA_BUILD='V97';
+document.title='Kaldarya V97 — Düzeltilmiş Yollar ve Hanedan Ağacı';
+
+/* ---------- 1. Final Kaldarya Merkez road rules. ---------- */
+function v97ForbiddenEdge(a,b){return a==='Akpınar'&&b==='Taç Ovası'||a==='Taç Ovası'&&b==='Akpınar'}
+v96Link('Yaşlıhisar','Börü Geçit');
+v96Unlink('Akpınar','Taç Ovası');
+var v97MoveToBase=moveTo;moveTo=function(n){if(v97ForbiddenEdge(K.at,n)){say('⛔ Taç Ovası ile Akpınar arasında doğrudan geçiş yok. Sancaktepe üzerinden ilerlemelisin.');return false}return v97MoveToBase.apply(this,arguments)};
+var v97GeneralMoveBase=moveGeneralTo;moveGeneralTo=function(n){var u=generals[K.activeGeneral];if(u&&v97ForbiddenEdge(u.at,n)){say('⛔ Taç Ovası ile Akpınar arasında doğrudan geçiş yok. Sancaktepe üzerinden ilerlemelisin.');return false}return v97GeneralMoveBase.apply(this,arguments)};
+var v97AttackBase=v42Attack;v42Attack=function(from,to,army){if(v97ForbiddenEdge(from,to)){say('⛔ Taç Ovası ile Akpınar arasında doğrudan hareket veya fetih yapılamaz. Sancaktepe üzerinden ilerle.');return true}return v97AttackBase.apply(this,arguments)};
+
+/* ---------- 2–3. Every blood member remains visible; consorts stay out of this management view. ---------- */
+function v97IsConsort(p){return !!p&&(/^(Eş|Hanedan Eşi|Kraliçe|Prens Eş)$/i).test(String(p.role||'').trim())}
+function v97DynastyPeople(){return dynasty.filter(function(p){return p&&p.v87&&!v97IsConsort(p)})}
+v95DynastyTree=function(){
+ v87Refresh();var people=v97DynastyPeople(),ids={};people.forEach(function(p){ids[p.v87.id]=p});
+ var children={};people.forEach(function(p){var parent=(p.v87.parents||[]).find(function(id){return ids[id]});if(parent)(children[parent]||(children[parent]=[])).push(p)});
+ var roots=people.filter(function(p){return !(p.v87.parents||[]).some(function(id){return ids[id]})});
+ function branch(p,seen){if(seen[p.v87.id])return '';seen[p.v87.id]=1;var kids=children[p.v87.id]||[];return '<li>'+v95TreeNode(p)+(kids.length?'<ul>'+kids.map(function(c){return branch(c,seen)}).join('')+'</ul>':'')+'</li>'}
+ var seen={},html=roots.map(function(p){return branch(p,seen)}).join('');people.forEach(function(p){if(!seen[p.v87.id])html+=branch(p,seen)});
+ return '<section class="v95Tree v97Tree"><h3>Hanedan aile ağacı</h3><div class="small">Tüm hanedan üyeleri korunur. Ağacı sağa-sola ve yukarı-aşağı kaydırabilir, düğüme dokunarak yaşam kaydını açabilirsin.</div><div class="v95TreeScroll"><ul>'+html+'</ul></div></section>';
+};
+function v97MemberCard(p){
+ var r=K.playerRegion,id=p.v87.id,f=v91Wallet(p),gov=v92Governor(p,r),i=dynasty.indexOf(p),alive=v87Live(p),status=p.captured?'Esir':p.assignment?'Komutan • '+p.assignment.army:gov?'Vali • '+gov.name:'Görevsiz • '+(p.at||'');
+ var h='<article class="v92Member '+(!alive?'v87Dead':'')+'" data-person="'+id+'"><div class="v92Identity">'+portraitHTML(p.name,p.role,p)+'<div><b>'+v37Safe(p.name)+'</b><div>'+v92Age(p)+' • '+v37Safe(p.role)+'</div><div>'+v37Safe(alive?status:'† Öldü')+'</div></div></div>';
+ var kids=dynasty.filter(function(c){return c.v87&&c.v87.parents.includes(id)&&!v97IsConsort(c)});if(kids.length)h+='<div class="small">Çocukları: '+kids.map(function(c){return v37Safe(c.name)}).join(', ')+'</div>';
+ if(alive){h+='<div class="v92Stats"><span>💰 '+f.gold+' altın</span><span>Gelir +'+f.income+'/tur</span><span>Nüfuz '+p.v87.influence+'</span></div>';
+  if(v91CanAct(p)){h+='<div class="row">'+(p.assignment?'<button onclick="v72RecallCommander('+i+')">Komutanlıktan ayrıl • 1 EP</button>':'<button onclick="v91Cities()">Valilik</button>')+'<button onclick="v92MemberOrders('+id+')">Ordu / Yolculuk</button></div>';
+   if(v91Single(p)&&p.role!=='Kral'){if(!v91Female(p))h+='<button '+(f.gold<12||K.actionPoints<1?'disabled':'')+' onclick="v91Marry('+id+')">Evlen • Kişisel 12 altın, 1 EP</button>';else h+=v283Regions().filter(function(x){return !!v91Groom(x)}).map(function(x){var price=30+Math.floor(v73Profile(K.playerRegion,p).diplomacy/10);return '<button '+(v28State(x).gold<price||K.actionPoints<1?'disabled':'')+' onclick="v91Bride('+id+',\''+x+'\')">'+v37Safe(x)+' ile evlilik • '+price+' altın al</button>'}).join('')}
+   h+='<details><summary>Sadakat, güven ve hediyeleşme</summary>'+dynasty.filter(function(b){return b!==p&&v87Live(b)&&!v97IsConsort(b)}).map(function(b){return '<div class="v92Relation">'+v37Safe(b.name)+'<br>Ona saygısı %'+v91Respect(r,p,b)+' • Onun saygısı %'+v91Respect(r,b,p)+(v91CanAct(b)?[5,10,20].map(function(n){return '<button '+(f.gold<n||K.actionPoints<1||p.v91GiftTurn===K.turn?'disabled':'')+' onclick="v92Gift('+id+','+b.v87.id+','+n+')">🎁 '+n+'</button>'}).join(''):'')+'</div>'}).join('')+'</details>';
+  }
+ }
+ return h+'<button onclick="v87Biography('+id+')">Yaşam kaydı</button></article>';
+}
+v96MembersHTML=function(){
+ var members=dynasty.filter(function(p){return !v97IsConsort(p)}),living=members.filter(v87Live),dead=members.filter(function(p){return !v87Live(p)});
+ return '<div class="v96Section"><div class="v96Summary"><span>Yaşayan <b>'+living.length+'</b></span><span>Anılan <b>'+dead.length+'</b></span><span>Bekleyen karar <b>'+v96PendingCount()+'</b></span></div><div class="v96Actions"><button onclick="v81Events()">📜 Bekleyen kararlar</button><button onclick="v85Intrigue()">🕵 Entrikalar</button><button onclick="v91Cities()">🏘 Şehirler ve valiler</button></div><div class="v96MemberGrid">'+living.map(v97MemberCard).join('')+'</div>'+(dead.length?'<details><summary>† Anılan hanedan üyeleri ('+dead.length+')</summary><div class="v96MemberGrid">'+dead.map(v97MemberCard).join('')+'</div></details>':'')+'</div>';
+};
+
+/* ---------- 4. An unreachable city tap opens its panel instead of producing a passage error. ---------- */
+tap=function(n){
+ if(K.mode==='move'&&reachable().indexOf(n)>=0){moveTo(n);return}
+ if(K.mode==='generalMove'&&generalReachable(K.activeGeneral).indexOf(n)>=0){moveGeneralTo(n);return}
+ K.mode='';clearGlow();openSettlement(n);
+};
+
+var v97CSS=document.createElement('style');v97CSS.textContent='\
+.v97Tree{overflow:visible}.v97Tree .v95TreeScroll{display:block;max-height:min(66vh,680px);overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y;scrollbar-gutter:stable;padding:10px 8px 22px}.v97Tree .v95TreeScroll>ul{justify-content:flex-start;min-width:max-content;width:max-content}.v97Tree .v95TreeScroll ul ul{min-width:max-content}.v97Tree .v95TreePerson{min-width:116px;max-width:140px}.v96MemberGrid .v92Member{width:auto;max-width:100%}\
+@media(max-width:650px){.v97Tree .v95TreeScroll{max-height:62vh}.v97Tree .v95TreePerson{min-width:104px;max-width:118px}}';document.body.appendChild(v97CSS);
+
+if(el('choose'))el('choose').dataset.build='V97';var v97Heading=document.querySelector('#bar .dockHeading');if(v97Heading&&v97Heading.firstElementChild)v97Heading.firstElementChild.textContent='KRALLIK KONTROLLERİ • V97';sync();
+</script>
 </body></html>
