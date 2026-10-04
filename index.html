@@ -7109,4 +7109,152 @@ var v95CSS=document.createElement('style');v95CSS.textContent='\
 if(el('choose'))el('choose').dataset.build='V95';var v95Heading=document.querySelector('#bar .dockHeading');if(v95Heading&&v95Heading.firstElementChild)v95Heading.firstElementChild.textContent='KRALLIK KONTROLLERİ • V95';sync();
 
 </script>
+<script>
+/* V96 — compact dynasty/war UI, upgradeable buildings, resilient war news,
+   explicit war causes, varied diplomacy, army dissolution and corrected roads. */
+window.KALDARYA_BUILD='V96';
+document.title='Kaldarya V96 — Sade Hanedan, Savaş Sebepleri ve Gelişen Şehirler';
+
+/* ---------- 1. Compact, single-column dynasty and war management. ---------- */
+var V96_FAMILY_TAB='tree';
+function v96FamilyTab(tab){V96_FAMILY_TAB=tab;openCapital('family')}
+function v96FamilyNav(){return '<div class="v96Nav">'+[
+ ['tree','🌳 Aile Ağacı'],['members','👥 Üyeler'],['duties','🏛 Görevler'],['war','⚔ Savaşlar']
+].map(function(x){return '<button class="'+(V96_FAMILY_TAB===x[0]?'active':'')+'" onclick="v96FamilyTab(\''+x[0]+'\')">'+x[1]+'</button>'}).join('')+'</div>'}
+function v96PendingCount(){return (K.birthDecisions||[]).filter(function(e){return !e.done}).length+(K.dynastyPetitions||[]).filter(function(e){return !e.done}).length+(K.successionDisputes||[]).filter(function(e){return !e.done}).length+V87.milestones.filter(function(e){return !e.done&&V87.people[e.person]&&V87.people[e.person].region===K.playerRegion}).length}
+function v96MembersHTML(){
+ var living=dynasty.filter(v87Live),dead=dynasty.filter(function(p){return !v87Live(p)});
+ return '<div class="v96Section"><div class="v96Summary"><span>Yaşayan <b>'+living.length+'</b></span><span>Anılan <b>'+dead.length+'</b></span><span>Bekleyen karar <b>'+v96PendingCount()+'</b></span></div><div class="v96Actions"><button onclick="v81Events()">📜 Bekleyen kararlar</button><button onclick="v85Intrigue()">🕵 Entrikalar</button><button onclick="v91Cities()">🏘 Şehirler ve valiler</button></div><div class="v96MemberGrid">'+living.map(v92MemberCard).join('')+'</div>'+(dead.length?'<details><summary>† Anılan hanedan üyeleri ('+dead.length+')</summary><div class="v96MemberGrid">'+dead.map(v92MemberCard).join('')+'</div></details>':'')+'</div>';
+}
+function v96DutiesHTML(){
+ var offices=Object.keys(V94_OFFICE_TYPES).map(function(t){var p=v94OfficePerson(K.playerRegion,t);return '<div class="v96Line"><b>'+V94_OFFICE_TYPES[t].name+'</b><span>'+v37Safe(p?p.name:'Boş')+'</span></div>'}).join('');
+ return '<div class="v96Section"><div class="v96Actions"><button onclick="v94OfficesPanel()">🏛 Makamları yönet</button><button onclick="v91Cities()">👤 Vali atamaları</button><button onclick="openPrison()">⛓ Esirler</button></div><div class="card">'+offices+'</div><div class="card"><b>Görev kuralı</b><div class="small">Bir hanedan üyesi aynı anda vali ve ordu komutanı olamaz. Komutan ataması üyeyi ordunun bulunduğu şehre götürür.</div></div>'+v93ReserveHTML(K.playerRegion)+'</div>';
+}
+familyHTML=function(){
+ v87Refresh();v92OfficeSync();v87DeathScan();
+ var content=V96_FAMILY_TAB==='members'?v96MembersHTML():V96_FAMILY_TAB==='duties'?v96DutiesHTML():V96_FAMILY_TAB==='war'?v96WarNewsHTML(true):v95DynastyTree();
+ return '<div class="v96Family"><div class="v96Title"><div><h2>Hanedan ve Savaş</h2><div class="small">Bilgiler dört sade bölümde toplandı.</div></div><button onclick="v81Events()">Bildirimler '+(v96PendingCount()?'• '+v96PendingCount():'')+'</button></div>'+v96FamilyNav()+content+'</div>';
+};
+
+/* ---------- 2. Every core building has three increasingly valuable levels. ---------- */
+var V96_BUILD_MAX={Tarla:3,'Ağıl':3,Han:3,Pazar:3,'Küçük Sur':3};
+var V96_BUILD_BASE={Tarla:{cost:2,time:1},'Ağıl':{cost:2,time:1},Han:{cost:3,time:2},Pazar:{cost:5,time:3},'Küçük Sur':{cost:5,time:3}};
+function v96BuildLevel(city,name){var s=settlements[city];return s?s.buildings.filter(function(b){return b===name}).length:0}
+function v96BuildPrice(name,next){var b=V96_BUILD_BASE[name]||BUILD[name];return Math.ceil(b.cost*(1+(next-1)*.75))}
+function v96BuildTime(name,next){var b=V96_BUILD_BASE[name]||BUILD[name];return b.time+Math.max(0,next-1)}
+function v96BuildBenefit(name,level){return name==='Tarla'?('+'+(4*level)+' yiyecek/tur'):name==='Ağıl'?('+'+(2*level)+' yiyecek, +'+level+' gelişmişlik/tur'):name==='Han'?('+'+level+' altın, +'+level+' yiyecek, +'+level+' gelişmişlik/tur'):name==='Pazar'?('+'+(2*level)+' altın, +'+level+' yiyecek/tur'):('Kuşatma süresi '+level+' tur')}
+BUILD.Tarla.bonus='Seviye başına +4 yiyecek';BUILD['Ağıl'].bonus='Seviye başına +2 yiyecek ve +1 gelişmişlik';BUILD.Han.bonus='Seviye başına +1 altın, yiyecek ve gelişmişlik';BUILD.Pazar.bonus='Seviye başına +2 altın ve +1 yiyecek';BUILD['Küçük Sur'].bonus='Seviye başına daha uzun kuşatma';
+v44CityBonuses=function(city){
+ var st=settlements[city];if(!st)return {food:0,gold:0,dev:0};var farm=v96BuildLevel(city,'Tarla'),ranch=v96BuildLevel(city,'Ağıl'),inn=v96BuildLevel(city,'Han'),market=v96BuildLevel(city,'Pazar');
+ return {food:farm*4+ranch*2+inn+market,gold:inn+market*2+(st.dev>=75?1:0)+(st.dev>=100?1:0),dev:ranch+inn};
+};
+startBuild=function(name){
+ var city=K.selectedCity,st=settlements[city],max=V96_BUILD_MAX[name]||1,level=st?v96BuildLevel(city,name):0,next=level+1;
+ if(!st||!playerControls(city)){say('⛔ Yalnız kendi kontrolündeki şehirlerde yapı geliştirebilirsin.');return false}
+ if(!BUILD[name]||level>=max){say('⛔ Bu yapı en yüksek seviyede.');return false}
+ if(st.construction){say('⏳ '+st.construction.name+' inşaatı bitmeden yeni geliştirme başlatılamaz.');return false}
+ var cost=v96BuildPrice(name,next),time=v96BuildTime(name,next);if(K.gold<cost){say('💰 Seviye '+next+' için '+cost+' altın gerekiyor.');return false}if(!spendAction('Bina geliştirme'))return false;
+ K.gold-=cost;st.construction={name:name,left:time,v96Level:next};sync();openSettlement(city);say('🔨 '+name+' seviye '+next+' geliştiriliyor • '+cost+' altın • '+time+' tur.');return true;
+};
+buildMenu=function(){
+ var city=K.selectedCity;if(!playerControls(city)){say('⛔ Yalnız kendi şehirlerinde inşaat yapabilirsin.');return false}var st=settlements[city],h=v85Header('Yapı geliştir • '+v37Safe(city))+'<div class="card small">Bütün temel yapılar seviye 3’e kadar yükselir. Her seviye daha pahalı ve daha uzun sürer; faydası doğrudan artar.</div>';
+ Object.keys(V96_BUILD_MAX).forEach(function(name){var level=v96BuildLevel(city,name),next=level+1,max=V96_BUILD_MAX[name],done=level>=max,cost=done?0:v96BuildPrice(name,next),time=done?0:v96BuildTime(name,next);h+='<div class="card build v96Build"><div><b>'+name+' • Seviye '+level+'/'+max+'</b><div class="small">Mevcut: '+(level?v96BuildBenefit(name,level):'Kurulu değil')+(done?'':'<br>Sonraki: '+v96BuildBenefit(name,next)+' • '+cost+' altın • '+time+' tur')+'</div></div><button '+(done||st.construction?'disabled':'')+' onclick="startBuild(\''+name+'\')">'+(done?'En yüksek':'Seviye '+next)+'</button></div>'});
+ if(st.construction)h='<div class="card">🔨 '+v37Safe(st.construction.name)+' geliştirmesi sürüyor • '+st.construction.left+' tur</div>'+h;panel(h);return true;
+};
+
+/* AI also pays gold and action points for upgrades; no free level creation. */
+function v96AIUpgrade(r){var st=v28State(r);if(st.ap<=0)return false;var choices=[];v283Owned(r).forEach(function(c){var s=settlements[c.name];if(s.construction)return;Object.keys(V96_BUILD_MAX).forEach(function(name){var level=v96BuildLevel(c.name,name),next=level+1,cost=v96BuildPrice(name,next);if(level<V96_BUILD_MAX[name]&&st.gold>=cost)choices.push({city:c.name,name:name,level:next,cost:cost,time:v96BuildTime(name,next)})})});if(!choices.length)return false;choices.sort(function(a,b){var an=a.name==='Tarla'||a.name==='Ağıl'?0:a.name==='Pazar'||a.name==='Han'?1:2,bn=b.name==='Tarla'||b.name==='Ağıl'?0:b.name==='Pazar'||b.name==='Han'?1:2;return an-bn||a.level-b.level});var x=choices[0];st.gold-=x.cost;st.ap--;settlements[x.city].construction={name:x.name,left:x.time,v96Level:x.level};return true}
+var v96AITurnBase=v28AITurn;v28AITurn=function(r){var out=v96AITurnBase.apply(this,arguments);if(r!==K.playerRegion&&v283Owned(r).length)v96AIUpgrade(r);return out};
+
+/* ---------- 3. One resilient war/news renderer; pending reports stay visible. ---------- */
+function v96WarName(type){return (V94_GOALS[type]&&V94_GOALS[type].name)||({cityDemand:'Şehir Talebi',tribute:'Vergiye Bağlama',protectorate:'Himaye Altına Alma',conquest:'Ülke Fethi'}[type])||'Savaş hedefi'}
+function v96WarNewsHTML(embedded){
+ var active=Object.keys(V94_WARS).map(function(k){return V94_WARS[k]}).filter(function(w){return w&&!w.ended&&v331Authorized(w.attacker,w.defender)}),h=embedded?'':v85Header('Savaşlar ve dünya haberleri');
+ h+='<div class="v96WarSummary"><span>Aktif savaş <b>'+active.length+'</b></span><span>Bekleyen haber <b>'+V51_PENDING.length+'</b></span><span>Açıklanmış <b>'+V51_HISTORY.length+'</b></span></div>';
+ h+='<section class="v96Section"><h3>Devam eden savaşlar</h3>'+(active.length?active.map(function(w){return '<div class="card"><b>'+v37Safe(w.attacker)+' ⚔ '+v37Safe(w.defender)+'</b><div class="small">Sebep: '+v37Safe(w.v95Cause||v96WarName(w.goal))+(w.targetCity?' • Hedef: '+v37Safe(w.targetCity):'')+'<br>Savaş skoru: '+(w.scores[w.attacker]||0)+' / '+(w.scores[w.defender]||0)+' • Yorgunluk: '+Math.round(v93State(w.attacker).fatigue)+' / '+Math.round(v93State(w.defender).fatigue)+'</div></div>'}).join(''):'<div class="card small">Devam eden savaş yok.</div>')+'</section>';
+ var pending=V51_PENDING.slice().reverse(),history=V51_HISTORY.slice(0,60),icons={war:'⚔',peace:'🕊',battle:'🛡',siege:'🏰',conquest:'🚩',retake:'🔄',rebellion:'⚠',tension:'📜'};
+ h+='<details class="v96Section" open><summary>Son savaş haberleri</summary>'+(pending.length?pending.map(function(e){return '<div class="v96News pending"><b>⌛ '+v37Safe(e.title||'Savaş haberi')+'</b><div class="small">Tur '+e.turn+' • '+v37Safe(e.detail||'Ayrıntılar doğrulanıyor.')+'</div></div>'}).join(''):'')+(history.length?history.map(function(e){return '<div class="v96News"><b>'+(icons[e.type]||'📜')+' '+v37Safe(e.title||'Savaş haberi')+'</b><div class="small">Tur '+e.turn+' • Yıl '+e.year+' • '+v37Safe(e.detail||'Kayıt tamamlandı.')+'</div></div>'}).join(''):'<div class="small">Henüz açıklanmış savaş haberi yok.</div>')+'</details>';
+ var world=(V33_EVENTS||[]).slice(0,40);h+='<details class="v96Section"><summary>Diplomatik ve dünya olayları</summary>'+(world.length?world.map(function(e){return '<div class="v96News"><b>'+v37Safe(e.title||'Dünya olayı')+'</b><div class="small">Yıl '+e.year+' • '+v37Safe(e.text||'')+'</div></div>'}).join(''):'<div class="small">Kayıtlı olay yok.</div>')+'</details>';return h;
+}
+v33WarsHTML=v96WarNewsHTML;openWars=function(){panel(v96WarNewsHTML())};openWarHistory=openWars;
+
+/* ---------- 4. Explicit war causes. ---------- */
+V94_GOALS.cityDemand={name:'Şehir Talebi',desc:'Seçilen şehrin savaş sonunda tanınmasını amaçlar.'};
+V94_GOALS.tribute={name:'Vergiye Bağlama',desc:'Hedef devleti vergi ödeyen devlet hâline getirme amacı.'};
+V94_GOALS.protectorate={name:'Himaye Altına Alma',desc:'En fazla üç şehirli devleti himaye altına alma amacı.'};
+V94_GOALS.conquest={name:'Ülke Fethi',desc:'En fazla üç şehirli devletin tamamını fethetme amacı.'};
+function v96GoalCause(a,b,g){
+ if(!g)return null;var count=v283Owned(b).length;
+ if(g.type==='cityDemand'&&g.city&&ownerOf(g.city)===b)return {type:g.type,city:g.city,label:'Şehir talebi • '+g.city};
+ if(g.type==='tribute')return {type:g.type,city:null,label:'Vergiye bağlama'};
+ if(g.type==='protectorate'&&count<=3)return {type:g.type,city:null,label:'Himaye altına alma'};
+ if(g.type==='conquest'&&count<=3)return {type:g.type,city:null,label:'Ülke fethi'};
+ return null;
+}
+v95ValidateGoal=function(a,b,g){return v96GoalCause(a,b,g)};
+v95ExternalCause=function(a,b){return v93Casus(a,b)?{type:'ultimatum',city:null,label:'Reddedilen ültimatom'}:null};
+function v96AICause(a,b){
+ if(v93Casus(a,b))return {type:'ultimatum',city:null,label:'Reddedilen ültimatom'};
+ var cities=v283Owned(b),border=v94GoalCities(a,b,'border'),ratio=v35Power(a)/Math.max(1,v35Power(b)),p=v94RulerProfile(a);
+ if(cities.length<=3&&ratio>=1.75&&p&&p.ambition>=68)return {type:'conquest',city:null,label:'Ülke fethi'};
+ if(cities.length<=3&&ratio>=1.25)return {type:'protectorate',city:null,label:'Himaye altına alma'};
+ if(border.length)return {type:'cityDemand',city:border[0].name,label:'Şehir talebi • '+border[0].name};
+ return {type:'tribute',city:null,label:'Vergiye bağlama'};
+}
+v94OpenWarGoal=function(other){
+ if(!other||other===K.playerRegion||v331Authorized(K.playerRegion,other)||K.gameOver)return false;var count=v283Owned(other).length,options=v283Owned(other).map(function(c){return '<option value="'+v37Safe(c.name)+'">'+v37Safe(c.name)+'</option>'}).join('');
+ panel(v85Header('Savaş sebebi • '+v37Safe(other))+'<div class="card">Savaş ancak aşağıdaki açık sebeplerden biriyle veya reddedilmiş ültimatomla başlayabilir. Hedef ülke: '+count+' şehir.</div><label class="card">Talep edilen şehir <select id="v94GoalCity">'+options+'</select></label><div class="v96GoalGrid"><button onclick="v94ChooseWarGoal(\''+other+'\',\'cityDemand\')"><b>🏘 Şehir Talebi</b><span>Seçilen şehri talep et.</span></button><button onclick="v94ChooseWarGoal(\''+other+'\',\'tribute\')"><b>💰 Vergiye Bağlama</b><span>Düzenli vergi talep et.</span></button><button '+(count>3?'disabled':'')+' onclick="v94ChooseWarGoal(\''+other+'\',\'protectorate\')"><b>🛡 Himaye Altına Alma</b><span>Yalnız 3 veya daha az şehir.</span></button><button '+(count>3?'disabled':'')+' onclick="v94ChooseWarGoal(\''+other+'\',\'conquest\')"><b>🚩 Ülke Fethi</b><span>Yalnız 3 veya daha az şehir.</span></button></div>');return true;
+};
+v94ChooseWarGoal=function(other,type){
+ var select=el('v94GoalCity'),g={type:type,city:type==='cityDemand'&&select?select.value:null},cause=v96GoalCause(K.playerRegion,other,g);if(!cause){say('⛔ Bu savaş sebebi hedef ülkenin şehir sayısı veya seçilen hedef nedeniyle kullanılamaz.');return false}
+ V94_PENDING_GOAL[K.playerRegion+'|'+other]=g;v95StageCause(K.playerRegion,other,cause);return v40Submit(other,'war');
+};
+v40Declare=function(other){return v94OpenWarGoal(other)};
+var v96StartWarBase=v94StartWar;v94StartWar=function(a,b){var c=V95_WAR_CAUSES[v95CauseKey(a,b)]||v95WarCause(a,b);if(c&&!V94_PENDING_GOAL[a+'|'+b])V94_PENDING_GOAL[a+'|'+b]={type:c.type==='ultimatum'?'cityDemand':c.type,city:c.city||((v94GoalCities(a,b,'border')[0]||{}).name||null)};return v96StartWarBase.apply(this,arguments)};
+v34Declare=function(a,b){
+ if(!v34CanDeclare(a,b))return false;var cause=v96AICause(a,b);v95StageCause(a,b,cause);V94_PENDING_GOAL[a+'|'+b]={type:cause.type==='ultimatum'?'cityDemand':cause.type,city:cause.city||null};var before=v331Authorized(a,b),out=setWar(a,b,true);if(!before&&!v331Authorized(a,b))return false;var st=v34S(a,b);st.stance='war';st.warStart=K.turn;st.warning=false;return out!==false;
+};
+var v96ResolveBase=v40Resolve;v40Resolve=function(p){
+ if(p.kind!=='war')return v96ResolveBase.apply(this,arguments);var me=K.playerRegion,o=p.other,message;if(v331Authorized(me,o))message='⚔ '+o+' ile savaş zaten başlamış.';else if(!v95WarCause(me,o))message='⛔ '+o+' için savaş başlatılamadı: ültimatom reddi veya seçilmiş savaş sebebi yok.';else{setWar(me,o,true);message=v331Authorized(me,o)?'🚨 '+o+' ile savaş başladı. Sebep: '+(V95_WAR_CAUSES[v95CauseKey(me,o)]||{}).label+'.':'⛔ Savaş koşulları geçersiz olduğu için ilan yürürlüğe girmedi.'}K.news.unshift('Tur '+K.turn+': '+message);say(message);return v331Authorized(me,o)};
+
+/* ---------- 5. Varied, throttled diplomatic tension and dynamic messages. ---------- */
+var V96_TENSIONS={},V96_RECENT_EVENTS=[];
+function v96TensionText(a,b){var d=v30D(a,b),border=v34Border(a,b),templates=border?[
+ ['Sınır Devriyeleri',a+' ile '+b+' sınırında karşılıklı devriyeler artırıldı; iki taraf da ilk saldıran görünmek istemiyor.'],
+ ['Geçit Anlaşmazlığı',a+' elçileri sınır geçitlerinin denetimi konusunda '+b+' sarayından resmî açıklama istedi.'],
+ ['Askerî Tatbikat',a+' ordusunun sınır tatbikatı '+b+' yönetiminde kaygı yarattı; elçiler güvence talep ediyor.'],
+ ['Tüccar Kervanı Krizi','Sınırdaki bir ticaret kervanına el konulması '+a+' ile '+b+' arasındaki güveni sarstı.'],
+ ['Harita ve Hak İddiası',a+' sarayı eski haritaları gerekçe göstererek '+b+' sınırındaki hak iddiasını yineledi.']]
+ :[['Elçiler Geri Çağrıldı',a+' ile '+b+' arasındaki görüşmeler sonuçsuz kaldı; elçiler geçici olarak geri çağrıldı.'],['Ticaret Gerilimi',a+' tüccarlarına uygulanan yeni vergiler '+b+' ile diplomatik nota krizine dönüştü.'],['Casusluk Suçlaması',b+' sarayı, '+a+' adına bilgi topladığı öne sürülen görevliler hakkında soruşturma başlattı.']];return templates[(K.turn+a.length+b.length+Math.round(d.grievance||0))%templates.length]}
+v34Warn=function(a,b){var st=v34S(a,b);if(st.warning&&K.turn-st.warningTurn<3)return;st.warning=true;st.warningTurn=K.turn;st.stance='crisis';v30Mem(a,b,'Diplomatik kriz ve savaş tehdidi',-8,-6,8);var key=v331Key(a,b),last=V96_TENSIONS[key]||-99;if(K.turn-last>=3){V96_TENSIONS[key]=K.turn;var x=v96TensionText(a,b);v33Event('tension',x[0],x[1],a,b)}if(a===K.playerRegion||b===K.playerRegion)say('⚠ '+(a===K.playerRegion?b:a)+' ile diplomatik kriz oluştu; ayrıntılar Savaşlar bölümünde.');};
+dynamicEvent=function(){if(Math.random()>.38)return;var pool=[],negative=v283Regions().filter(function(r){return r!==K.playerRegion&&v30D(K.playerRegion,r).relation<0});if(K.gold<15)pool.push('Hazine görevlileri kısa vadeli borç ve harcama kesintisi seçeneklerini tartışıyor.');if(K.peopleHappy<45)pool.push('Şehir temsilcileri vergi yükünün hafifletilmesi için saraya heyet gönderdi.');if(K.armyLoyal<45)pool.push('Ordu ileri gelenleri maaş, erzak ve terfi düzeni hakkında toplantı talep etti.');if(negative.length){var r=negative[(K.turn+negative.length)%negative.length];pool.push(r+' sınırındaki devriyeler karşılıklı olarak güçlendirildi.');pool.push(r+' tüccarlarına uygulanan gümrük denetimleri diplomatik notaya dönüştü.');pool.push(r+' elçisi, saraydaki görüşmelerin ardından yeni güvence talepleri sundu.');pool.push(r+' hakkında yayılan casusluk söylentileri konseyde tartışılıyor.')}if(!pool.length)pool.push('Gezgin tüccarlar, uzak krallıklardaki fiyatlar ve yollar hakkında yeni haberler getirdi.','Yerel yöneticiler gelecek hasat için sulama kanallarının onarılmasını önerdi.','Saray kâtipleri eski anlaşmaları yeniden düzenleyerek diplomatik arşivi güncelledi.');var choices=pool.filter(function(x){return V96_RECENT_EVENTS.indexOf(x)<0});if(!choices.length){V96_RECENT_EVENTS=[];choices=pool}var msg=choices[Math.floor(Math.random()*choices.length)];V96_RECENT_EVENTS.push(msg);if(V96_RECENT_EVENTS.length>5)V96_RECENT_EVENTS.shift();say('📜 <b>Dinamik Olay</b><br>'+msg)};
+
+/* ---------- 6, 8, 9, 10, 12. Canonical Kaldarya/Vardun road corrections. ---------- */
+function v96Link(a,b){if(!K.info[a]||!K.info[b])return false;(FIXED_ROADS[a]||(FIXED_ROADS[a]=[]));(FIXED_ROADS[b]||(FIXED_ROADS[b]=[]));if(FIXED_ROADS[a].indexOf(b)<0)FIXED_ROADS[a].push(b);if(FIXED_ROADS[b].indexOf(a)<0)FIXED_ROADS[b].push(a);return true}
+function v96Unlink(a,b){if(FIXED_ROADS[a])FIXED_ROADS[a]=FIXED_ROADS[a].filter(function(x){return x!==b});if(FIXED_ROADS[b])FIXED_ROADS[b]=FIXED_ROADS[b].filter(function(x){return x!==a})}
+v96Unlink('Akpınar','Taşova');v96Unlink('Yaşlıhisar','Börü Geçit');v96Unlink('Yaşlıhisar','Kümüreçit');
+v96Link('Akpınar','Sancaktepe');v96Link('Sancaktepe','Taşova');v96Link('Börü Geçit','Konukgeçit');v96Link('Yaşlıhisar','Sancaktepe');
+/* The old printed Yaşlıhisar at its former coordinate is blurred; the moved, interactive city remains unique. */
+var v96OldLabelPatch=document.createElement('div');v96OldLabelPatch.className='v96OldYasliPatch';v96OldLabelPatch.setAttribute('aria-hidden','true');if(el('stage'))el('stage').appendChild(v96OldLabelPatch);
+var v96Labels=document.querySelectorAll('.v81CityName');for(var v96li=1;v96li<v96Labels.length;v96li++)v96Labels[v96li].remove();
+
+/* ---------- 7. Small defeated enemy general armies dissolve and must be rebuilt. ---------- */
+function v96DisbandWeakLosers(region,units,city){if(region===K.playerRegion)return 0;var count=0;(units||[]).forEach(function(u){if(!u||u===kingdomKings[region]||u.captured||u.dead||u.alive===false)return;if((u.soldiers||0)<=3){u.soldiers=0;u.alive=false;u.onDuty=false;u.disbanded=true;u.disbandedTurn=K.turn;if(u.el)u.el.style.display='none';count++;K.news.unshift('⚔ '+region+' ordusunun '+u.name+' birliği '+city+' yenilgisinden sonra dağıldı. Yeni ordu için altın ve 8 insan gücü gerekecek.')}});return count}
+var v96BattleBase=v312Battle;v312Battle=function(a,units,d,city){var defenders=v312Defenders(d,city).slice(),out=v96BattleBase.apply(this,arguments);if(out)v96DisbandWeakLosers(d,defenders,city);else v96DisbandWeakLosers(a,units,city);return out};v31Battle=function(a,units,b,defenders,city){return v312Battle(a,units,b,city)};
+
+/* ---------- 11. Foreign conquered land still requires friendship, +50 or access. ---------- */
+v81TravelPermit=function(a,b){return !!(a&&b&&(a===b||!v331Authorized(a,b)&&(v30Has(a,b,'access')||v30Has(a,b,'friendship')||v81Relation(a,b)>=50)))};
+hasMilitaryAccess=function(a,b){return v81TravelPermit(a,b)};
+v63CanTraverse=function(from,to,armyOwner){
+ if(!armyOwner||!K.info[from]||!K.info[to]||v95ForbiddenEdge(from,to)||(FIXED_ROADS[from]||[]).indexOf(to)<0||(FIXED_ROADS[to]||[]).indexOf(from)<0)return false;var source=ownerOf(from),target=ownerOf(to);if(!target)return false;if(source&&source!==armyOwner&&!v331Authorized(armyOwner,source)&&!v81TravelPermit(armyOwner,source))return false;if(target===armyOwner)return true;return v331Authorized(armyOwner,target)?v331CanAttackNow(armyOwner,target):v81TravelPermit(armyOwner,target);
+};
+movementCost=function(a,b,r){return a&&b&&v63CanTraverse(a.name,b.name,r)?1:99};politicalLink=function(a,b,r){return !!(a&&b&&v63CanTraverse(a.name,b.name,r))};
+
+var v96CSS=document.createElement('style');v96CSS.textContent='\
+.v96Family{max-width:100%;overflow:hidden}.v96Title{display:flex;align-items:center;justify-content:space-between;gap:8px}.v96Title h2{margin:0}.v96Nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:10px 0}.v96Nav button{min-width:0;padding:9px 4px;font-size:12px}.v96Nav button.active{background:#8b6c2e;color:#fff6d2;border-color:#e5c66f}.v96Section{display:block;margin:8px 0;max-width:100%}.v96Actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.v96Actions button{flex:1 1 145px}.v96Summary,.v96WarSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}.v96Summary span,.v96WarSummary span{background:#17243a;border:1px solid #4d607b;border-radius:7px;padding:8px;text-align:center}.v96MemberGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}.v96MemberGrid .card{margin:0}.v96Line{display:flex;justify-content:space-between;gap:10px;padding:8px;border-bottom:1px solid #3c4b62}.v96GoalGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.v96GoalGrid button{display:flex;flex-direction:column;gap:4px;text-align:left}.v96GoalGrid span{font-size:11px;opacity:.8}.v96News{padding:8px 2px;border-bottom:1px solid #3d4d65}.v96News.pending{border-left:3px solid #d0a84b;padding-left:8px}.v96Build{display:flex;align-items:center;justify-content:space-between;gap:8px}.v96OldYasliPatch{position:absolute;left:914px;top:448px;width:112px;height:32px;z-index:22;pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(133,78,29,.24);border-radius:12px}\
+@media(max-width:650px){.v96Nav{grid-template-columns:1fr 1fr}.v96Summary,.v96WarSummary{grid-template-columns:1fr}.v96GoalGrid{grid-template-columns:1fr}.v96MemberGrid{grid-template-columns:1fr}.v96Title{align-items:flex-start}.v96Title button{font-size:11px}}';document.body.appendChild(v96CSS);
+
+if(el('choose'))el('choose').dataset.build='V96';var v96Heading=document.querySelector('#bar .dockHeading');if(v96Heading&&v96Heading.firstElementChild)v96Heading.firstElementChild.textContent='KRALLIK KONTROLLERİ • V96';sync();
+
+</script>
 </body></html>
